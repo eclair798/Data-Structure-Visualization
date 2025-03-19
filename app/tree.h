@@ -2,48 +2,57 @@
 
 #include <memory>
 #include <iostream>
+#include <cassert>
+#include <cstdint>
 
 namespace app {
 
-using KeyType = int;
+/* Красно-Черное дерево. Его свойства:
+* 1) Каждый узел красный или черный
+* 2) Корень и конечные узлы (листья) дерева — чёрные (в структуре листья NIL будут храниться как nullptr)
+* 3) У красного узла родительский узел — чёрный
+* 4) Все простые пути из любого узла x до листьев содержат одинаковое количество чёрных узлов
+* 5) Чёрный узел может иметь чёрного родителя
+*/
 
-using NodePtr = std::shared_ptr<Node>;
-
-struct Node {
-    Node(KeyType key, NodePtr left = nullptr, NodePtr right = nullptr, NodePtr parent = nullptr,
-         bool isRed = false);
-
-    KeyType key;
-    NodePtr left;
-    NodePtr right;
-    NodePtr parent = nullptr;
-    bool isRed;
-};
-
+template<typename KeyType = int>
 class RBTree {
 public:
-    RBTree();
-    ~RBTree() = default;
-    void Insert(KeyType key);
-    void Delete(KeyType key);
-    bool Search(KeyType key) const;
-    void Print();
+    enum class NodeColor : std::uint8_t { Black, Red };
+
+    struct Node {
+        using NodePtr = std::unique_ptr<Node>;
+        KeyType key;
+        NodePtr left = nullptr;
+        NodePtr right = nullptr;
+        Node* parent = nullptr;
+        NodeColor color = NodeColor::Black;
+    };
+
+    using NodePtr = Node::NodePtr;
+
+    RBTree() = default;
+
+    void Insert(const KeyType& key);
+    void Delete(const KeyType& key);
+    bool Search(const KeyType& key) const;
+
+    // В будущем: copy constructor, copy assignment, move constructor, move assignment. Наверное
+
+    std::ostream& operator<<(std::ostream& os,
+                             const RBTree& tree);  // TODO
 
 private:
-    void RotateLeft(NodePtr x);
-    void RotateRight(NodePtr x);
-    void InsertFixup(NodePtr z);
-    void DeleteFixup(NodePtr x);
+    void RotateLeft(Node* x);
+    void RotateRight(Node* x);
+    void InsertFixup(Node* x);
+    void DeleteFixup(Node* parent);
 
-    void Transplant(NodePtr u, NodePtr v);
-    NodePtr Minimum(NodePtr node) const;
+    Node* SearchNode(const KeyType& key) const;
+    Node* Minimum(Node* subtreeRoot) const;
+    NodePtr& ParentRef(Node* child);
 
-    NodePtr SearchHelper(NodePtr node, KeyType key) const;
-
-    void PrintHelper(NodePtr node, std::string indent, bool last);
-
-    static NodePtr NIL;
-    NodePtr root_ = NIL;
+    NodePtr root_ = nullptr;
 };
 
 }  // namespace app

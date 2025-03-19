@@ -7,41 +7,39 @@
 
 namespace app {
 
-enum class Color { Black, Red };
-
-using Scalar = float;
-
-struct Point {
-    Scalar x;
-    Scalar y;
-};
-
-using GeomNodePtr = std::shared_ptr<GeomNode>;
-
-struct GeomNode {
-    GeomNode(KeyType val, Point coordinate, Scalar R, Color color);
-    KeyType val;
-    Point coordinate;
-    Scalar R;
-    Color color;
-
-    GeomNodePtr left = nullptr;
-    GeomNodePtr right = nullptr;
-};
-
-class GeomTree {
-    GeomTree() = default;
-    ~GeomTree() = default;
-
-    GeomNodePtr GetRoot();
-
-private:
-    GeomNodePtr root_;
-};
-
+template<typename KeyType = int>
 class GeomModel {
+    enum class Color : std::uint8_t { Black, Red };
+
+    using Scalar = float;
+
+    struct Point {
+        Scalar x;
+        Scalar y;
+    };
+
+    class GeomTree {
+        struct GeomNode {
+            using GeomNodePtr = std::unique_ptr<GeomNode>;
+            KeyType val;
+            Point coordinate;
+            Scalar R;
+            Color color;
+            GeomNodePtr left = nullptr;
+            GeomNodePtr right = nullptr;
+        };
+
+        using GeomNodePtr = GeomNode::GeomNodePtr;
+
+        GeomTree(const RBTree &);
+
+        GeomNodePtr GetRoot();
+
+    private:
+        GeomNodePtr root_;
+    };
+
     GeomModel(Scalar dy, Scalar R);
-    ~GeomModel() = default;
 
     GeomTree CreateGeomTree(const RBTree &);
 

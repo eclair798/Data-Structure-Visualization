@@ -4,262 +4,427 @@
 
 namespace app {
 
-Node::Node(KeyType key, NodePtr left, NodePtr right, NodePtr parent, bool isRed)
-    : key(key), left(left), right(right), parent(parent), isRed(isRed) {
-}
-
-NodePtr RBTree::NIL = std::make_shared<Node>(0, nullptr, nullptr, nullptr, false);
-
-RBTree::RBTree() : root_(NIL) {
-}
-
-void RBTree::Insert(KeyType key) {
-    NodePtr z = std::make_shared<Node>(key, NIL, NIL, NIL, true);
-    NodePtr y = NIL;
-    NodePtr x = root_;
-    while (x != NIL) {
-        y = x;
-        if (z->key < x->key) {
-            x = x->left;
+// Просто ищет ноду с ключом. Если такого нет, то просто nullptr
+template<typename KeyType>
+typename RBTree<KeyType>::Node* RBTree<KeyType>::SearchNode(const KeyType& key) const {
+    Node* current = root_.get();
+    while (current != nullptr) {
+        if (key < current->key) {
+            current = current->left.get();
+        } else if (key > current->key) {
+            current = current->right.get();
         } else {
-            x = x->right;
+            return current;
         }
     }
-    z->parent = y;
-    if (y == NIL) {
-        root_ = z;
-    } else if (z->key < y->key) {
-        y->left = z;
-    } else {
-        y->right = z;
-    }
-    z->left = NIL;
-    z->right = NIL;
-    z->isRed = true;
-
-    InsertFixup(z);
+    return nullptr;
 }
 
-void RBTree::InsertFixup(NodePtr z) {
-    while (z->parent->isRed) {
-        if (z->parent == z->parent->parent->left) {
-            NodePtr y = z->parent->parent->right;
-            if (y->isRed) {
-                z->parent->isRed = false;
-                y->isRed = false;
-                z->parent->parent->isRed = true;
-                z = z->parent->parent;
-            } else {
-                if (z == z->parent->right) {
-                    z = z->parent;
-                    RotateLeft(z);
-                }
-                z->parent->isRed = false;
-                z->parent->parent->isRed = true;
-                RotateRight(z->parent->parent);
-            }
-        } else {
-            NodePtr y = z->parent->parent->left;
-            if (y->isRed) {
-                z->parent->isRed = false;
-                y->isRed = false;
-                z->parent->parent->isRed = true;
-                z = z->parent->parent;
-            } else {
-                if (z == z->parent->left) {
-                    z = z->parent;
-                    RotateRight(z);
-                }
-                z->parent->isRed = false;
-                z->parent->parent->isRed = true;
-                RotateLeft(z->parent->parent);
-            }
-        }
-    }
-    root_->isRed = false;
+template<typename KeyType>
+bool RBTree<KeyType>::Search(const KeyType& key) const {
+    return (SearchNode(key) != nullptr);
 }
 
-void RBTree::Delete(KeyType key) {
-    NodePtr z = SearchHelper(root_, key);
-    if (z == NIL) {
+// Минимальный ключ в поддереве
+template<typename KeyType>
+typename RBTree<KeyType>::Node* RBTree<KeyType>::Minimum(Node* subtreeRoot) const {
+    Node* current = subtreeRoot;
+    while (current->left) {
+        current = current->left.get();
+    }
+    return current;
+}
+
+// Возвращает NodePtr& указываюзий на Node*
+template<typename KeyType>
+typename RBTree<KeyType>::NodePtr& RBTree<KeyType>::ParentRef(Node* child) {
+    if (child == root_.get()) {
+        return root_;
+    }
+    Node* p = child->parent;
+    assert(p && "Error in ParentRef: child->parent is null");
+
+    if (p->left.get() == child) {
+        return p->left;
+    } else if (p->right.get() == child) {
+        return p->right;
+    }
+    assert(false && "Error in ParentRef: child->parent has not this child");
+}
+
+/*
+*       x               y
+*      / \             / \
+*     A   y    -->    x   C
+*        / \         / \
+*       B   C       A   B
+*/
+template<typename KeyType>
+void RBTree<KeyType>::RotateLeft(Node* x) {
+    if (!x || !x->right) {
         return;
     }
-    NodePtr y = z;
-    NodePtr x;
-    bool yOriginalColor = y->isRed;
+    Node* y = x->right.get();
 
-    if (z->left == NIL) {
-        x = z->right;
-        Transplant(z, z->right);
-    } else if (z->right == NIL) {
-        x = z->left;
-        Transplant(z, z->left);
-    } else {
-        y = Minimum(z->right);
-        yOriginalColor = y->isRed;
-        x = y->right;
-        if (y->parent == z) {
-            x->parent = y;
+    x->right = std::move(y->left);  // в этот момент y отвязался от unique_ptr
+    if (x->right) {
+        x->right->parent = x;
+    }
+
+    NodePtr& refToX = ParentRef(x);  // получаем ссылку на x
+    refToX.release();                // отвязываем x от unique_ptr
+
+    NodePtr oldX;
+    oldX.reset(x);  // "упаковали" x во временный unique_ptr
+    NodePtr oldY;
+    oldY.reset(y);  // "упаковали" y во временный unique_ptr
+
+    // Восстанавливаем связь y->parent = x->parent
+    y->parent = x->parent;
+
+    // В refToX (тот, что раньше указывал на x) запишем y
+    refToX = std::move(oldY);  // теперь refToX владеет y
+
+    // y->left становится x
+    y->left = std::move(oldX);
+    y->left->parent = y;
+}
+
+/*
+*         x           y
+*        / \         / \
+*       y   A  -->  B   x   
+*      / \             / \
+*     B   C           C   A
+*/
+
+template<typename KeyType>
+void RBTree<KeyType>::RotateRight(Node* x) {
+    if (!x || !x->left) {
+        return;
+    }
+    Node* y = x->left.get();
+
+    // Перенос "правого поддерева y" на "левое поддерево x"
+    x->left = std::move(y->right);
+    if (x->left) {
+        x->left->parent = x;
+    }
+
+    NodePtr& refToX = ParentRef(x);
+    refToX.release();
+    NodePtr oldX;
+    oldX.reset(x);
+
+    NodePtr oldY;
+    oldY.reset(y);
+
+    y->parent = x->parent;
+    refToX = std::move(oldY);
+
+    y->right = std::move(oldX);
+    y->right->parent = y;
+}
+
+// Вставка нового ключа
+template<typename KeyType>
+void RBTree<KeyType>::Insert(const KeyType& key) {
+    if (Search(key)) {
+        return;  // Ключ уже в дереве
+    }
+
+    NodePtr newNode = std::make_unique<Node>(key);
+
+    // Дерево пустое
+    if (!root_) {
+        newNode->color = NodeColor::Black;
+        root_ = std::move(newNode);
+        return;
+    }
+
+    // search
+    Node* current = root_.get();
+    Node* parent = nullptr;
+    while (current != nullptr) {
+        parent = current;
+        if (key < current->key) {
+            current = current->left.get();
         } else {
-            Transplant(y, y->right);
-            y->right = z->right;
-            y->right->parent = y;
+            current = current->right.get();
         }
-        Transplant(z, y);
-        y->left = z->left;
+    }
+
+    // insert
+    newNode->parent = parent;
+    Node* rawNew = newNode.get();
+    if (key < parent->key) {
+        parent->left = std::move(newNode);
+    } else {
+        parent->right = std::move(newNode);
+    }
+
+    // fixup
+    InsertFixup(rawNew);
+}
+
+/*
+* Восстановление КЧ-свойств после вставки узла x.
+* Пока у x есть "красный родитель", проверяем "дядю".
+* Если дядя красный - просто перекрашиваем, иначе делаем повороты.
+*/
+template<typename KeyType>
+void RBTree<KeyType>::InsertFixup(Node* x) {
+    // Пока есть родитель и он красный - нарушение свойства 3
+    while (x != root_.get() && x->parent->color == NodeColor::Red) {
+        Node* parent = x->parent;
+        Node* grandparent =
+            parent->parent;  // если есть красный отец то и дед должен быть, причем черный
+        assert(grandparent && "Error in InsertFixup: red node has not parent");
+        assert(grandparent->color == NodeColor::Black &&
+               "Error in InsertFixup: red node has red parent");
+
+        if (parent == grandparent->left.get()) {
+            // "Дядя" - правый сын деда
+            Node* uncle = grandparent->right.get();
+
+            // 1) Дядя красный
+            if (uncle && uncle->color == NodeColor::Red) {
+                // Перекрашиваем
+                parent->color = NodeColor::Black;
+                uncle->color = NodeColor::Black;
+                grandparent->color = NodeColor::Red;
+                x = grandparent;
+            } else {
+                // 2) Дядя чёрный
+                if (x == parent->right.get()) {
+                    x = parent;
+                    RotateLeft(x);
+                    parent = x->parent;
+                    grandparent = parent->parent;
+                }
+                parent->color = NodeColor::Black;
+                grandparent->color = NodeColor::Red;
+                RotateRight(grandparent);
+            }
+        } else {
+            // "Дядя" - левый сын деда
+            Node* uncle = grandparent->left.get();
+
+            // 1) Дядя красный
+            if (uncle && uncle->color == NodeColor::Red) {
+                parent->color = NodeColor::Black;
+                uncle->color = NodeColor::Black;
+                grandparent->color = NodeColor::Red;
+                x = grandparent;
+            } else {
+                // 2) Дядя чёрный
+                if (x == parent->left.get()) {
+                    x = parent;
+                    RotateRight(x);
+                    parent = x->parent;
+                    grandparent = parent->parent;
+                }
+                parent->color = NodeColor::Black;
+                grandparent->color = NodeColor::Red;
+                RotateLeft(grandparent);
+            }
+        }
+    }
+    root_->color = NodeColor::Black;
+}
+
+/* 
+* Удаление узла по ключу.
+* 1) Сначала ищем узел p с нужным ключом.
+* 2) В зависимости от числа детей действуем как в обычном BST:
+*    - Нет детей: удаляем узел напрямую.
+*    - Один ребёнок: "поднимаем" ребёнка на место p.
+*    - Два ребёнка: ищем "следующего по ключу" (minimum в правом поддереве),
+*      копируем его ключ в p, а дальше удаляем найденный узел как в случае "нет или один ребёнок".
+* 3) Если удалённая (или перемещённая) вершина была чёрной, делаем fixup.
+*/
+template<typename KeyType>
+void RBTree<KeyType>::Delete(const KeyType& key) {
+    Node* z = SearchNode(key);
+    if (!z) {
+        return;
+    }
+
+    // y - удаляемый узел
+    Node* y = z;
+    NodeColor yOriginalColor = y->color;
+    Node* yOriginalParent = y->parent;
+
+    // x - единственный сын y который поднимем на его место
+    Node* x = nullptr;
+    NodePtr tmpHolder;
+
+    if (!z->left) {
+        // нет левого ребёнка
+        x = z->right.get();
+        // "поднимаем" z->right на место z
+        NodePtr& zRef = ParentRef(z);
+        tmpHolder = std::move(zRef);
+        NodePtr rightSubtree = std::move(z->right);
+        if (rightSubtree) {
+            rightSubtree->parent = z->parent;
+        }
+        zRef = std::move(rightSubtree);
+    } else if (!z->right) {
+        // нет правого ребёнка
+        x = z->left.get();
+        NodePtr& zRef = ParentRef(z);
+        tmpHolder = std::move(zRef);
+        NodePtr leftSubtree = std::move(z->left);
+        if (leftSubtree) {
+            leftSubtree->parent = z->parent;
+        }
+        zRef = std::move(leftSubtree);
+    } else {
+        // у z два ребёнка.
+        y = Minimum(z->right.get());
+        yOriginalColor = y->color;
+        yOriginalParent = y->parent;
+
+        x = y->right.get();
+
+        // поднимаем x на место y
+        NodePtr& yRef = ParentRef(y);
+        tmpHolder = std::move(yRef);
+        NodePtr yRight = std::move(y->right);
+        if (yRight) {
+            yRight->parent = y->parent;
+        }
+        yRef = std::move(yRight);
+
+        // поднимаем y на место z
+        NodePtr& zRef = ParentRef(z);
+
+        y->right = std::move(z->right);
+        y->right->parent = y;
+        y->left = std::move(z->left);
         y->left->parent = y;
-        y->isRed = z->isRed;
+        y->parent = z->parent;
+        y->color = z->color;
+
+        NodePtr oldZ = std::move(zRef);
+        zRef = std::move(tmpHolder);
     }
-    if (!yOriginalColor) {
-        DeleteFixup(x);
+
+    if (yOriginalColor == NodeColor::Red) {
+        return;
     }
+    if (x) {
+        assert(x->color == NodeColor::Red &&
+               "Error in Delete: The only child is black. The black height on the right and on the "
+               "left is different");
+        x->color = NodeColor::Black;
+        return;
+    }
+
+    DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
 }
 
-void RBTree::DeleteFixup(NodePtr x) {
-    while (x != root_ && !x->isRed) {
-        if (x == x->parent->left) {
-            NodePtr w = x->parent->right;
-            if (w->isRed) {
-                w->isRed = false;
-                x->parent->isRed = true;
-                RotateLeft(x->parent);
-                w = x->parent->right;
+/*
+ * Восстановление КЧ-свойств после удаления.
+ * x - это NIL узел который имеет двойную черность.
+ * Идём вверх до корня, пока не снимем двойную чёрность.
+ */
+template<typename KeyType>
+void RBTree<KeyType>::DeleteFixup(Node* parent) {
+    Node* x = nullptr;
+    while (x != root_.get() && (!x || x->color == NodeColor::Black)) {
+        parent = x ? x->parent : parent;
+
+        if (x == parent->left.get()) {
+            // x - левый ребёнок
+            Node* w = parent->right.get();
+            assert(w && "Error in DeleteFixup: x has not brother");
+
+            // 1. Если брат красный
+            if (w->color == NodeColor::Red) {
+                w->color = NodeColor::Black;
+                parent->color = NodeColor::Red;
+                RotateLeft(parent);
+                w = parent->right.get();
+                assert(w && "Error in DeleteFixup: x has not brother");
             }
-            if (!w->left->isRed && !w->right->isRed) {
-                w->isRed = true;
-                x = x->parent;
+
+            // 2. Если дети брата чёрные
+            if ((!w->left || w->left->color == NodeColor::Black) &&
+                (!w->right || w->right->color == NodeColor::Black)) {
+                w->color = NodeColor::Red;
+                x = parent;
+                continue;
             } else {
-                if (!w->right->isRed) {
-                    w->left->isRed = false;
-                    w->isRed = true;
+                // 3. Если левый ребёнок брата красный, а правый чёрный
+                if (!w->right || w->right->color == NodeColor::Black) {
+                    if (w->left) {
+                        w->left->color = NodeColor::Black;
+                    }
+                    w->color = NodeColor::Red;
                     RotateRight(w);
-                    w = x->parent->right;
+                    w = parent->right.get();
+                    if (!w) {
+                        x = parent;
+                        continue;
+                    }
                 }
-                w->isRed = x->parent->isRed;
-                x->parent->isRed = false;
-                w->right->isRed = false;
-                RotateLeft(x->parent);
-                x = root_;
+                // 4. Правый ребёнок брата красный
+                w->color = parent->color;
+                parent->color = NodeColor::Black;
+                if (w->right) {
+                    w->right->color = NodeColor::Black;
+                }
+                RotateLeft(parent);
+                x = root_.get();
             }
         } else {
-            NodePtr w = x->parent->left;
-            if (w->isRed) {
-                w->isRed = false;
-                x->parent->isRed = true;
-                RotateRight(x->parent);
-                w = x->parent->left;
+            // x - правый ребёнок
+            Node* w = parent->left.get();
+            assert(w && "Error in DeleteFixup: x has not brother");
+
+            // 1. Брат красный
+            if (w->color == NodeColor::Red) {
+                w->color = NodeColor::Black;
+                parent->color = NodeColor::Red;
+                RotateRight(parent);
+                w = parent->left.get();
+                assert(w && "Error in DeleteFixup: x has not brother");
             }
-            if (!w->right->isRed && !w->left->isRed) {
-                w->isRed = true;
-                x = x->parent;
+
+            // 2. Оба ребёнка брата чёрные
+            if ((!w->left || w->left->color == NodeColor::Black) &&
+                (!w->right || w->right->color == NodeColor::Black)) {
+                w->color = NodeColor::Red;
+                x = parent;
+                continue;
             } else {
-                if (!w->left->isRed) {
-                    w->right->isRed = false;
-                    w->isRed = true;
+                // 3. Правый ребёнок брата красный, а левый чёрный
+                if (!w->left || w->left->color == NodeColor::Black) {
+                    if (w->right) {
+                        w->right->color = NodeColor::Black;
+                    }
+                    w->color = NodeColor::Red;
                     RotateLeft(w);
-                    w = x->parent->left;
+                    w = parent->left.get();
+                    if (!w) {
+                        x = parent;
+                        continue;
+                    }
                 }
-                w->isRed = x->parent->isRed;
-                x->parent->isRed = false;
-                w->left->isRed = false;
-                RotateRight(x->parent);
-                x = root_;
+                // 4. Левый ребёнок брата красный
+                w->color = parent->color;
+                parent->color = NodeColor::Black;
+                if (w->left) {
+                    w->left->color = NodeColor::Black;
+                }
+                RotateRight(parent);
+                x = root_.get();
             }
         }
     }
-    x->isRed = false;
-}
-
-void RBTree::Transplant(NodePtr u, NodePtr v) {
-    if (u->parent == NIL) {
-        root_ = v;
-    } else if (u == u->parent->left) {
-        u->parent->left = v;
-    } else {
-        u->parent->right = v;
-    }
-    v->parent = u->parent;
-}
-
-NodePtr RBTree::Minimum(NodePtr node) const {
-    while (node->left != NIL) {
-        node = node->left;
-    }
-    return node;
-}
-
-void RBTree::RotateLeft(NodePtr x) {
-    NodePtr y = x->right;
-    x->right = y->left;
-    if (y->left != NIL) {
-        y->left->parent = x;
-    }
-    y->parent = x->parent;
-    if (x->parent == NIL) {
-        root_ = y;
-    } else if (x == x->parent->left) {
-        x->parent->left = y;
-    } else {
-        x->parent->right = y;
-    }
-    y->left = x;
-    x->parent = y;
-}
-
-void RBTree::RotateRight(NodePtr x) {
-    NodePtr y = x->left;
-    x->left = y->right;
-    if (y->right != NIL) {
-        y->right->parent = x;
-    }
-    y->parent = x->parent;
-    if (x->parent == NIL) {
-        root_ = y;
-    } else if (x == x->parent->right) {
-        x->parent->right = y;
-    } else {
-        x->parent->left = y;
-    }
-    y->right = x;
-    x->parent = y;
-}
-
-bool RBTree::Search(KeyType key) const {
-    return SearchHelper(root_, key) != NIL;
-}
-
-NodePtr RBTree::SearchHelper(NodePtr node, KeyType key) const {
-    if (node == NIL || key == node->key) {
-        return node;
-    }
-    if (key < node->key) {
-        return SearchHelper(node->left, key);
-    }
-    return SearchHelper(node->right, key);
-}
-
-void RBTree::Print() {
-    if (root_ != NIL) {
-        PrintHelper(root_, "", true);
-    }
-}
-
-void RBTree::PrintHelper(NodePtr node, std::string indent, bool last) {
-    if (node != NIL) {
-        std::cout << indent;
-        if (last) {
-            std::cout << "R----";
-            indent += "   ";
-        } else {
-            std::cout << "L----";
-            indent += "|  ";
-        }
-
-        std::string color = node->isRed ? "RED" : "BLACK";
-        std::cout << node->key << "(" << color << ")" << std::endl;
-        PrintHelper(node->left, indent, false);
-        PrintHelper(node->right, indent, true);
-    }
+    x->color = NodeColor::Black;
 }
 
 }  // namespace app
