@@ -1,5 +1,3 @@
-#pragma once
-
-#include "geom.h"
+#include "geom_model.h"
 
 namespace app {}  // namespace app
