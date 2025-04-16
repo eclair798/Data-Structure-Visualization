@@ -7,12 +7,21 @@ namespace app {
 using KeyType = int;
 
 class GeomModel {
-    GeomModel(Scalar dy, Scalar R);
+public:
+    using Tree = RBTree<KeyType>;
+    using GTree = GeomTree<KeyType>;
+    using GTreeConstPtr = std::shared_ptr<const GTree>;
 
-    GeomTree<KeyType> CreateGeomTree(const RBTree<KeyType>& tree);
+    using Observer = NSLibrary::CColdInput<const Tree&, NSLibrary::CByReference>;
+
+    GeomModel(Tree& tree);
+
+    void UpdateFrom(const Tree& tree);
+    GTreeConstPtr GetCurrentFrame() const;
 
 private:
-    // todo
+    GTreeConstPtr tree_;
+    Observer observer_;
 };
 
 }  // namespace app

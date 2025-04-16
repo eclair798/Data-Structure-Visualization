@@ -1,4 +1,4 @@
-#include "tree.h"
+#include "geom_tree.h"
 
 #include <iostream>
 
@@ -20,6 +20,8 @@ int main() {
     tree.Delete(1);
 
     std::cout << tree << "\n=====================\n";
+
+    GeomTree<int> gTree(tree);
 
     return 0;
 }

@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <functional>
 
+#include "tree_iterator.h"
+#include "observer.h"
+
 namespace app {
 
 /* Красно-Черное дерево. Его свойства:
@@ -20,6 +23,7 @@ template<typename KeyType = int>
 class RBTree {
 public:
     enum class NodeColor : std::uint8_t { Black, Red };
+    enum class NodeStatus : std::uint8_t { NoChange, Found, Intermediate };
 
 private:
     struct Node {
@@ -29,9 +33,26 @@ private:
         NodePtr right = nullptr;
         Node* parent = nullptr;
         NodeColor color = NodeColor::Black;
+
+        NodeStatus status = NodeStatus::NoChange;
     };
 
     using NodePtr = typename Node::NodePtr;
+
+public:
+    using It = Iterator<Node>;
+    using ConstIt = ConstIterator<Node>;
+
+    using Observable = NSLibrary::CObservable<const RBTree&, NSLibrary::CByReference>;
+    using Observer = NSLibrary::CColdInput<const RBTree&, NSLibrary::CByReference>;
+
+    It GetRoot() {
+        return It{root_};
+    }
+
+    ConstIt GetRoot() const {
+        return ConstIt{root_};
+    }
 
 public:
     RBTree() = default;
@@ -173,6 +194,10 @@ public:
 
     bool Search(const KeyType& key) const {
         return (SearchNode(key) != nullptr);
+    }
+
+    void Reset() {
+        root_.reset();
     }
 
     template<typename KT>
@@ -479,8 +504,22 @@ private:
         assert(false && "Error in ParentRef: child->parent has not this child");
     }
 
+public:
+    void SubscribeStep(Observer* observerPtr) {
+        observable_.subscribe(observerPtr);
+    }
+
+private:
+    void NotifyStep() {  // todo: проставить NotifyStep в местах изменения дерева
+        observable_.notify();
+    }
+
 private:
     NodePtr root_ = nullptr;
+
+    Observable observable_{[this]() -> const RBTree& {
+        return *this;
+    }};
 };
 
 }  // namespace app
