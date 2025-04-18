@@ -1,6 +1,6 @@
 #include "animator.h"
 
-namespace app {
+namespace rbtree {
 
 void Animator::onTimeout() {
     if (!frames_.empty()) {
@@ -8,15 +8,17 @@ void Animator::onTimeout() {
     }
 }
 
-Animator::Animator(GeomModel* gModel)
-    : observer_([this](GTreeConstPtr frame) { this->enqueueFrame(frame); }) {
+Animator::Animator(GeomModel* gModel, QObject* parent)
+    : observer_([this](GTreeConstPtr frame) { this->enqueueFrame(frame); }), QObject(parent) {
     gModel->SubscribeFrame(&observer_);
 
-    connect(&timer_, &QTimer::timeout, this, &Animator::onTimeout);
+    timer_ = std::make_unique<QTimer>(this);
 
-    timer_.setSingleShot(false);
-    timer_.setInterval(timer_interval);
-    timer_.start();
+    connect(timer_.get(), &QTimer::timeout, this, &Animator::onTimeout);
+
+    timer_->setSingleShot(false);
+    timer_->setInterval(startTimerInterval);
+    timer_->start();
 }
 
 void Animator::enqueueFrame(GTreeConstPtr frame) {
@@ -29,4 +31,4 @@ GTreeConstPtr Animator::PopFrame() {
     return frame;
 }
 
-}  // namespace app
+}  // namespace rbtree

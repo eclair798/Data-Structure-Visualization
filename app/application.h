@@ -1,11 +1,13 @@
 #pragma once
 
-#include "main_window.h"
-#include "animator.h"
-#include "geom_model.h"
-#include "view.h"
+#include <QObject>
 
-namespace app {
+#include "view.h"
+#include "animator.h"
+#include "controllers.h"
+#include "main_window.h"
+
+namespace rbtree {
 
 class Application {
 public:
@@ -20,12 +22,13 @@ private:
     std::unique_ptr<GeomModel> geomModel_;
 
     std::unique_ptr<Animator> animator_;
-    std::unique_ptr<TreeView> treeView_;
 
-    std::unique_ptr<TreeController> tree_controller_;
-    std::unique_ptr<TimerController> timer_controller_;
+    std::unique_ptr<TreeController> treeController_;
+    std::unique_ptr<TimerController> timerController_;
 
     void SetupConnections();
 };
 
-}  // namespace app
+// todo проставить asserts и errors
+
+}  // namespace rbtree

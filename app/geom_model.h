@@ -2,7 +2,7 @@
 
 #include "geom_tree.h"
 
-namespace app {
+namespace rbtree {
 
 using Key = int;
 using RBTreeINT = RBTree<Key>;
@@ -41,4 +41,4 @@ private:
     }};
 };
 
-}  // namespace app
+}  // namespace rbtree

@@ -2,10 +2,7 @@
 
 #include "tree.h"
 
-#include <memory>
-#include <iostream>
-
-namespace app {
+namespace rbtree {
 
 enum class Color : std::uint8_t {
     Black,
@@ -180,4 +177,4 @@ public:
     static constexpr const Point rootCoordinates = {0, 0};
 };
 
-}  // namespace app
+}  // namespace rbtree

@@ -4,12 +4,11 @@
 #include <iostream>
 #include <cassert>
 #include <cstdint>
-#include <functional>
 
 #include "tree_iterator.h"
 #include "observer.h"
 
-namespace app {
+namespace rbtree {
 
 /* Красно-Черное дерево. Его свойства:
 * 1) Каждый узел красный или черный
@@ -198,6 +197,22 @@ public:
 
     void Reset() {
         root_.reset();
+    }
+
+    void StatusReset(Node* now = nullptr) {
+        if (root_ == nullptr) {
+            return;
+        }
+        if (now == nullptr) {
+            now = root_.get();
+        }
+        now->status = NodeStatus::NoChange;
+        if (now->left) {
+            StatusReset(now->left.get());
+        }
+        if (now->right) {
+            StatusReset(now->right.get());
+        }
     }
 
     template<typename KT>
@@ -522,4 +537,4 @@ private:
     }};
 };
 
-}  // namespace app
+}  // namespace rbtree

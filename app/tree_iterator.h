@@ -1,6 +1,6 @@
 #pragma once
 
-namespace app {
+namespace rbtree {
 
 // Итератор подойдет для любого бинарного дерева с полями:
 // left, right (unique ptrs) и parent (raw ptr)
@@ -133,4 +133,4 @@ private:
     Node* current;
 };
 
-}  // namespace app
+}  // namespace rbtree

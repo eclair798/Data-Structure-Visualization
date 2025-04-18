@@ -1,6 +1,6 @@
 #include "geom_model.h"
 
-namespace app {
+namespace rbtree {
 
 GeomModel::GeomModel(RBTreeINT* tree)
     : observer_([this](const RBTreeINT& changedTree) { this->UpdateFrom(changedTree); }) {
@@ -16,4 +16,4 @@ GTreeConstPtr GeomModel::GetCurrentFrame() const {
     return tree_;
 }
 
-}  // namespace app
+}  // namespace rbtree

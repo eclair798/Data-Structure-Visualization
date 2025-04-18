@@ -4,16 +4,15 @@
 #include <QPainter>
 #include <QPaintEvent>
 
-#include "animator.h"
 #include "geom_model.h"
 
-namespace app {
+namespace rbtree {
 
 class TreeView : public QWidget {
     Q_OBJECT
 public:
     using ConstIt = GTree::ConstIt;
-    TreeView();
+    TreeView(QWidget* parent = nullptr);
 
     void ShowFrame(GTreeConstPtr frame);
 
@@ -29,4 +28,4 @@ private:
     GTreeConstPtr currentFrame_;
 };
 
-}  // namespace app
+}  // namespace rbtree

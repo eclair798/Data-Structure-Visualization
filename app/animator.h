@@ -2,13 +2,13 @@
 
 #include <QObject>
 #include <QTimer>
+
 #include <queue>
 #include <chrono>
 
-#include "observer.h"
 #include "geom_model.h"
 
-namespace app {
+namespace rbtree {
 
 class Animator : public QObject {
     Q_OBJECT
@@ -16,7 +16,9 @@ class Animator : public QObject {
 public:
     using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
 
-    Animator(GeomModel* gModel);
+    Animator(GeomModel* gModel, QObject* parent = nullptr);
+
+    GTreeConstPtr PopFrame();
 
 signals:
     void frameReady();
@@ -28,16 +30,14 @@ private slots:
 private:
     void enqueueFrame(GTreeConstPtr frame);
 
-    GTreeConstPtr PopFrame();
+public:
+    GTreeObserver observer_;
+    std::unique_ptr<QTimer> timer_;
+
+    static constexpr const std::chrono::milliseconds startTimerInterval{500};
 
 private:
-    GTreeObserver observer_;
-
-    QTimer timer_;
-
-    std::chrono::milliseconds timer_interval{100};
-
     std::queue<GTreeConstPtr> frames_;
 };
 
-}  // namespace app
+}  // namespace rbtree

@@ -1,33 +1,50 @@
 #include "controllers.h"
 
-namespace app {
+namespace rbtree {
 
-TreeController::TreeController(RBTreeINT* tree, QLineEdit* keyEdit)
-    : tree_(tree), keyEdit_(keyEdit) {
+TreeController::TreeController(RBTreeINT* tree, QLineEdit* keyEdit, QObject* parent)
+    : tree_(tree), keyEdit_(keyEdit), QObject(parent) {
 }
 
 void TreeController::HandleInsert() {
-    // todo
+    bool ok;
+    int value = keyEdit_->text().toInt(&ok);
+    if (ok) {
+        tree_->Insert(value);
+    } else {
+        // todo error
+    }
 }
 
 void TreeController::HandleDelete() {
-    // todo
+    bool ok;
+    int value = keyEdit_->text().toInt(&ok);
+    if (ok) {
+        tree_->Delete(value);
+    } else {
+        // todo error
+    }
 }
 
 void TreeController::HandleFind() {
-    // todo
+    bool ok;
+    int value = keyEdit_->text().toInt(&ok);
+    if (ok) {
+        tree_->Search(value);
+    } else {
+        // todo error
+    }
 }
 
 void TreeController::HandleReset() {
+    tree_->Reset();
+}
+
+TimerController::TimerController(QTimer* timer, QObject* parent) : timer_(timer), QObject(parent) {
+}
+
+void TimerController::HandleTimerChange(int value) {
     // todo
 }
 
-TimerController::TimerController(Animator* animator, QSlider* intervalSlider)
-    : animator_(animator), intervalSlider_(intervalSlider) {
-}
-
-void TimerController::HandleTimerChange() {
-    // todo
-}
-
-}  // namespace app
+}  // namespace rbtree

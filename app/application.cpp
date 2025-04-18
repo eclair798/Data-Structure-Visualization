@@ -1,29 +1,53 @@
 #include "application.h"
 
-namespace app {
+namespace rbtree {
 
 Application::Application() {
-    window_ = std::make_unique<MainWindow>();
+    window_ = std::make_unique<MainWindow>();  // создается вьюха
 
     tree_ = std::make_unique<RBTreeINT>();
     geomModel_ = std::make_unique<GeomModel>(tree_.get());
 
-    animator_ = std::make_unique<Animator>(geomModel_.get());
-    treeView_ = std::make_unique<TreeView>();
+    animator_ =
+        std::make_unique<Animator>(geomModel_.get(), window_.get());  // внутри заводится таймер
 
-    tree_controller_ = std::make_unique<TreeController>(tree_.get(), window_->keyEdit_);
-    timer_controller_ =
-        std::make_unique<TimerController>(animator_.get(), window_->intervalSlider_);
+    treeController_ =
+        std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
+    timerController_ = std::make_unique<TimerController>(animator_->timer_.get(), window_.get());
 
     SetupConnections();
 }
 
 void Application::SetupConnections() {
     // шаблон connect(sender, &SenderType::signalName, receiver, &ReceiverType::slotName);
-    // todo: кнопки и ползунки с контроллерами, аниматор с вьюхой
+    // или connect(sender, &SenderType::signalName, [](){} );
+
+    // connect Аниматора с вьюхой
+    QObject::connect(animator_.get(), &Animator::frameReady,
+                     [this]() { window_->treeView->ShowFrame(animator_->PopFrame()); });
+
+    // connect Кнопок с контроллером
+    QObject::connect(window_->insertButton.get(), &QPushButton::clicked, treeController_.get(),
+                     &TreeController::HandleInsert);
+    QObject::connect(window_->deleteButton.get(), &QPushButton::clicked, treeController_.get(),
+                     &TreeController::HandleDelete);
+    QObject::connect(window_->findButton.get(), &QPushButton::clicked, treeController_.get(),
+                     &TreeController::HandleFind);
+    QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
+                     &TreeController::HandleReset);
+
+    // connect Ползунока с контроллером
+    QObject::connect(window_->intervalSlider.get(), &QSlider::valueChanged, timerController_.get(),
+                     &TimerController::HandleTimerChange);
+
+    // connect Контроллером с сообщением для пользователя
+    QObject::connect(treeController_.get(), &TreeController::NewMessage,
+                     window_->messageLabel.get(), &QLabel::setText);
 }
 
 void Application::Run() {
+    window_->show();
+    // todo ?
 }
 
-}  // namespace app
+}  // namespace rbtree

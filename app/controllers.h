@@ -1,25 +1,28 @@
 #pragma once
 
-#include "geom_model.h"
-#include "animator.h"
-
 #include <QObject>
+#include <QTimer>
 #include <QLineEdit>
 #include <QSlider>
 
-namespace app {
+#include "geom_model.h"
+
+namespace rbtree {
 
 class TreeController : public QObject {
     Q_OBJECT
 
 public:
-    TreeController(RBTreeINT* tree, QLineEdit* keyEdit);
+    TreeController(RBTreeINT* tree, QLineEdit* keyEdit, QObject* parent = nullptr);
 
-private slots:
+public slots:
     void HandleInsert();
     void HandleDelete();
     void HandleFind();
     void HandleReset();
+
+signals:
+    void NewMessage(const QString& message);
 
 private:
     RBTreeINT* tree_;
@@ -30,14 +33,13 @@ class TimerController : public QObject {
     Q_OBJECT
 
 public:
-    TimerController(Animator* animator, QSlider* intervalSlider);
+    TimerController(QTimer* timer, QObject* parent = nullptr);
 
-private slots:
-    void TimerController::HandleTimerChange();
+public slots:
+    void HandleTimerChange(int value);
 
 private:
-    Animator* animator_;
-    QSlider* intervalSlider_;
+    QTimer* timer_;
 };
 
-}  // namespace app
+}  // namespace rbtree

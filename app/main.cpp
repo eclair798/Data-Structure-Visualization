@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace app;
+using namespace rbtree;
 
 int main() {
     RBTree<int> tree;

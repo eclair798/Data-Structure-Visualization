@@ -9,28 +9,31 @@
 #include <QHBoxLayout>
 #include <QWidget>
 
-#include "controllers.h"
-#include "view.h"
-#include "animator.h"
-#include "geom_model.h"
+#include <memory>
 
-namespace app {
+#include "view.h"
+
+namespace rbtree {
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    MainWindow();
+    MainWindow(QWidget* parent = nullptr);
 
 public:
-    QLineEdit* keyEdit_;
-    QPushButton* insertButton_;
-    QPushButton* deleteButton_;
-    QPushButton* findButton_;
-    QPushButton* resetButton_;
+    std::unique_ptr<TreeView> treeView;
 
-    QSlider* intervalSlider_;
-    QLabel* intervalLabel_;
+    std::unique_ptr<QLineEdit> keyEdit;
+    std::unique_ptr<QPushButton> insertButton;
+    std::unique_ptr<QPushButton> deleteButton;
+    std::unique_ptr<QPushButton> findButton;
+    std::unique_ptr<QPushButton> resetButton;
+
+    std::unique_ptr<QLabel> messageLabel;
+
+    std::unique_ptr<QSlider> intervalSlider;
+    std::unique_ptr<QLabel> intervalLabel;
 };
 
-}  // namespace app
+}  // namespace rbtree

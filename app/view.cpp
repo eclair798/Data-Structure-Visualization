@@ -1,8 +1,8 @@
 #include "view.h"
 
-namespace app {
+namespace rbtree {
 
-TreeView::TreeView() {
+TreeView::TreeView(QWidget *parent) : QWidget(parent) {
 }
 
 void TreeView::ShowFrame(GTreeConstPtr frame) {
@@ -31,4 +31,4 @@ void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo)
     // todo
 }
 
-}  // namespace app
+}  // namespace rbtree
