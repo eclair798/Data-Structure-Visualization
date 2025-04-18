@@ -4,24 +4,41 @@
 
 namespace app {
 
-using KeyType = int;
+using Key = int;
+using RBTreeINT = RBTree<Key>;
+using GTree = GeomTree<Key>;
+using GTreeConstPtr = std::shared_ptr<const GTree>;
+using GNode = GTree::GeomNode;
 
 class GeomModel {
 public:
-    using Tree = RBTree<KeyType>;
-    using GTree = GeomTree<KeyType>;
-    using GTreeConstPtr = std::shared_ptr<const GTree>;
+    using GTreeObservable = NSLibrary::CObservable<GTreeConstPtr, NSLibrary::CByValue>;
+    using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
 
-    using Observer = NSLibrary::CColdInput<const Tree&, NSLibrary::CByReference>;
+    using TreeObserver = NSLibrary::CColdInput<const RBTreeINT&, NSLibrary::CByReference>;
 
-    GeomModel(Tree& tree);
+    GeomModel(RBTreeINT* tree);
 
-    void UpdateFrom(const Tree& tree);
+    void UpdateFrom(const RBTreeINT& tree);
     GTreeConstPtr GetCurrentFrame() const;
+
+public:
+    void SubscribeFrame(GTreeObserver* observerPtr) {
+        observable_.subscribe(observerPtr);
+    }
+
+private:
+    void NotifyFrame() {
+        observable_.notify();
+    }
 
 private:
     GTreeConstPtr tree_;
-    Observer observer_;
+    TreeObserver observer_;
+
+    GTreeObservable observable_{[this]() -> GTreeConstPtr {
+        return GetCurrentFrame();
+    }};
 };
 
 }  // namespace app

@@ -43,8 +43,8 @@ public:
     using It = Iterator<Node>;
     using ConstIt = ConstIterator<Node>;
 
-    using Observable = NSLibrary::CObservable<const RBTree&, NSLibrary::CByReference>;
-    using Observer = NSLibrary::CColdInput<const RBTree&, NSLibrary::CByReference>;
+    using TreeObservable = NSLibrary::CObservable<const RBTree&, NSLibrary::CByReference>;
+    using TreeObserver = NSLibrary::CColdInput<const RBTree&, NSLibrary::CByReference>;
 
     It GetRoot() {
         return It{root_};
@@ -505,7 +505,7 @@ private:
     }
 
 public:
-    void SubscribeStep(Observer* observerPtr) {
+    void SubscribeStep(TreeObserver* observerPtr) {
         observable_.subscribe(observerPtr);
     }
 
@@ -517,7 +517,7 @@ private:
 private:
     NodePtr root_ = nullptr;
 
-    Observable observable_{[this]() -> const RBTree& {
+    TreeObservable observable_{[this]() -> const RBTree& {
         return *this;
     }};
 };

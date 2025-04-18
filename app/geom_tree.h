@@ -41,23 +41,21 @@ struct Point {
     }
 };
 
-const Point rootCoordinates = {0, 0};
-
 using Text = std::string;
 
 // доделать
 template<typename KeyType = int>
 Color GetNodeColor(typename RBTree<KeyType>::ConstIt it) {
-    using Tree = RBTree<KeyType>;
-    if (it->status == Tree::NodeStatus::NoChange) {
+    using RBTreeKT = RBTree<KeyType>;
+    if (it->status == RBTreeKT::NodeStatus::NoChange) {
         switch (it->color) {
-            case Tree::NodeColor::Red:
+            case RBTreeKT::NodeColor::Red:
                 return Color::Red;
             default:
                 return Color::Black;
         }
     }
-    if (it->status == Tree::NodeStatus::Found) {
+    if (it->status == RBTreeKT::NodeStatus::Found) {
         return Color::Green;
     }
     return Color::Gray;
@@ -66,7 +64,7 @@ Color GetNodeColor(typename RBTree<KeyType>::ConstIt it) {
 template<typename KeyType = int>
 class GeomTree {
 public:
-    using Tree = RBTree<KeyType>;
+    using RBTreeKT = RBTree<KeyType>;
     using NumOfLevel = int;
 
     struct GeomNode {
@@ -98,13 +96,13 @@ public:
     }
 
 public:
-    GeomTree(const Tree& tree) {
+    GeomTree(const RBTreeKT& tree) {
         SetNode(root_, tree.GetRoot());
         SetCoordinates(root_);
     }
 
 private:
-    Scalar SetNode(GeomNodePtr& curNode, typename Tree::ConstIt it) {
+    Scalar SetNode(GeomNodePtr& curNode, typename RBTreeKT::ConstIt it) {
         auto node = std::make_unique<GeomNode>();
 
         if (!it) {
@@ -179,6 +177,7 @@ public:
     static constexpr const Scalar heightOfLevel = 50.;
     static constexpr const Scalar minDistBetweenNodes = 5.;
     static constexpr const Scalar radiusOfNodeView = 20.;
+    static constexpr const Point rootCoordinates = {0, 0};
 };
 
 }  // namespace app

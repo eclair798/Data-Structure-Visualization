@@ -2,15 +2,17 @@
 
 namespace app {
 
-GeomModel::GeomModel(Tree& tree) : observer_([this](const Tree& tree) { this->UpdateFrom(tree); }) {
-    tree.SubscribeStep(&observer_);
+GeomModel::GeomModel(RBTreeINT* tree)
+    : observer_([this](const RBTreeINT& changedTree) { this->UpdateFrom(changedTree); }) {
+    tree->SubscribeStep(&observer_);
 }
 
-void GeomModel::UpdateFrom(const Tree& tree) {
+void GeomModel::UpdateFrom(const RBTreeINT& tree) {
     tree_ = std::make_shared<const GTree>(GTree(tree));
+    NotifyFrame();
 }
 
-GeomModel::GTreeConstPtr GeomModel::GetCurrentFrame() const {
+GTreeConstPtr GeomModel::GetCurrentFrame() const {
     return tree_;
 }
 
