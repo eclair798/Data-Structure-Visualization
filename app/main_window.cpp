@@ -4,40 +4,50 @@ namespace rbtree {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QWidget* centralWidget = new QWidget(this);
-    QVBoxLayout* layout = new QVBoxLayout(centralWidget);
+    setCentralWidget(centralWidget);
+
+    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
 
     treeView = std::make_unique<TreeView>(this);
 
+    mainLayout->addWidget(treeView.get(), 3);
+
+    QWidget* rightPanel = new QWidget(this);
+    QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+
     // Поле для ввода
-    keyEdit = std::make_unique<QLineEdit>(new QLineEdit(this));
+    keyEdit = std::make_unique<QLineEdit>(this);
 
     // Кнопки
-    insertButton = std::make_unique<QPushButton>(new QPushButton("Insert", this));
-    deleteButton = std::make_unique<QPushButton>(new QPushButton("Delete", this));
-    findButton = std::make_unique<QPushButton>(new QPushButton("Find", this));
-    resetButton = std::make_unique<QPushButton>(new QPushButton("Reset", this));
+    insertButton = std::make_unique<QPushButton>("Insert", this);
+    deleteButton = std::make_unique<QPushButton>("Delete", this);
+    findButton = std::make_unique<QPushButton>("Find", this);
+    resetButton = std::make_unique<QPushButton>("Reset", this);
 
     // Ползунок таймера
-    intervalSlider = std::make_unique<QSlider>(new QSlider(Qt::Horizontal, this));
+    intervalSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
     intervalSlider->setRange(10, 1000);
     intervalSlider->setValue(500);
 
-    messageLabel = std::make_unique<QLabel>(new QLabel("Hello! Create your Red Black Tree!", this));
+    messageLabel = std::make_unique<QLabel>("Hello! Create your Red Black Tree!", this);
 
-    intervalLabel = std::make_unique<QLabel>(new QLabel("Time between frames", this));
+    intervalLabel = std::make_unique<QLabel>("Time between frames:", this);
 
-    layout->addWidget(keyEdit.get());
-    layout->addWidget(insertButton.get());
-    layout->addWidget(deleteButton.get());
-    layout->addWidget(findButton.get());
-    layout->addWidget(resetButton.get());
+    rightLayout->addWidget(keyEdit.get());
+    rightLayout->addWidget(insertButton.get());
+    rightLayout->addWidget(deleteButton.get());
+    rightLayout->addWidget(findButton.get());
+    rightLayout->addWidget(resetButton.get());
 
-    layout->addWidget(messageLabel.get());
+    rightLayout->addWidget(messageLabel.get());
 
-    layout->addWidget(intervalLabel.get());
-    layout->addWidget(intervalSlider.get());
+    rightLayout->addWidget(intervalLabel.get());
+    rightLayout->addWidget(intervalSlider.get());
 
-    setCentralWidget(centralWidget);
+    rightLayout->setSpacing(10);
+    rightLayout->setContentsMargins(10, 10, 10, 10);
+
+    mainLayout->addWidget(rightPanel, 1);
 
     // todo разобраться с деталями отрисовки
 }

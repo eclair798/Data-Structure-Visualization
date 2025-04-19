@@ -2,7 +2,10 @@
 
 namespace rbtree {
 
-Application::Application() {
+Application::Application(int argc, char* argv[]) {
+    QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+
+    qApp_ = std::make_unique<QApplication>(argc, argv);
     window_ = std::make_unique<MainWindow>();  // создается вьюха
 
     tree_ = std::make_unique<RBTreeINT>();
@@ -45,8 +48,9 @@ void Application::SetupConnections() {
                      window_->messageLabel.get(), &QLabel::setText);
 }
 
-void Application::Run() {
+int Application::Run() {
     window_->show();
+    return qApp_->exec();
     // todo ?
 }
 

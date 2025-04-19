@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QApplication>
 
 #include "view.h"
 #include "animator.h"
@@ -11,11 +12,13 @@ namespace rbtree {
 
 class Application {
 public:
-    Application();
+    Application(int argc, char* argv[]);
 
-    void Run();
+    int Run();
 
 private:
+    std::unique_ptr<QApplication> qApp_;
+
     std::unique_ptr<MainWindow> window_;
 
     std::unique_ptr<RBTreeINT> tree_;
