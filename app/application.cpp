@@ -39,11 +39,15 @@ void Application::SetupConnections() {
     QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
                      &TreeController::HandleReset);
 
-    // connect Ползунка с контроллером
+    // connect Ползунка таймера с контроллером
     QObject::connect(window_->intervalSlider.get(), &QSlider::valueChanged, timerController_.get(),
                      &TimerController::HandleTimerChange);
 
-    // connect Контроллером с сообщением для пользователя
+    // connect Ползунка масштабирования с вьюхой
+    QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, window_->treeView.get(),
+                     &TreeView::HandleScaleChange);
+
+    // connect Контроллера с сообщением для пользователя
     QObject::connect(treeController_.get(), &TreeController::NewMessage,
                      window_->messageLabel.get(), &QLabel::setText);
 }

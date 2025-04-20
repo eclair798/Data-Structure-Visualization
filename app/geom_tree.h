@@ -214,8 +214,8 @@ private:
 
 public:
     static constexpr const Scalar heightOfLevel = 40.;
-    static constexpr const Scalar minDistBetweenNodes = 2.;
-    static constexpr const Scalar halfWidthOfNodeView = 10.;
+    static constexpr const Scalar minDistBetweenNodes = 0.;
+    static constexpr const Scalar halfWidthOfNodeView = 15.;
     static constexpr const Point rootCoordinates = {0, 0};
     static constexpr const Scalar indent = 30.;
 };

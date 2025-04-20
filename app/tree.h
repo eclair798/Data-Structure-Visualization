@@ -172,9 +172,13 @@ public:
             NodePtr& zRef = ParentRef(z);
 
             y->right = std::move(z->right);
-            y->right->parent = y;
+            if (y->right) {
+                y->right->parent = y;
+            }
             y->left = std::move(z->left);
-            y->left->parent = y;
+            if (y->left) {
+                y->left->parent = y;
+            }
             y->parent = z->parent;
             y->color = z->color;
 

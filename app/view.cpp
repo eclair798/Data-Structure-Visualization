@@ -10,6 +10,11 @@ void TreeView::ShowFrame(GTreeConstPtr frame) {
     update();
 }
 
+void TreeView::HandleScaleChange(int val) {
+    scaler = val / 10.0;
+    update();
+}
+
 void TreeView::paintEvent(QPaintEvent *) {
     if (!currentFrame_) {
         return;
@@ -24,6 +29,7 @@ void TreeView::DrawTree(QPainter &painter) {
     if (!it) {
         return;
     }
+    painter.scale(scaler, scaler);
     DrawNode(painter, it);
 }
 
@@ -35,16 +41,16 @@ void TreeView::DrawNode(QPainter &painter, ConstIt nodeIt) {
     DrawEdge(painter, nodeIt, nodeIt->right);
 
     QPointF centre = makeQPoint(nodeIt->centre);
-    qScalar halfWidth(nodeIt->halfWidth);
+    QScalar halfWidth(nodeIt->halfWidth);
     QColor color = makeQColor(nodeIt->color);
     QString text = makeQString(nodeIt->key);
+    QRectF rect;
     if (nodeIt->shape == GTree::NodeShape::Circle) {
-        QRectF cRect = CircleToRect(centre, halfWidth);
-        DrawCircleWithCenteredText(painter, cRect, text, color);
+        rect = CircleToRect(centre, halfWidth);
     } else {
-        QRectF rect = GetRect(centre, halfWidth);
-        DrawRectWithCenteredText(painter, rect, text, color);
+        rect = GetRect(centre, halfWidth);
     }
+    DrawNodeWithCenteredText(painter, rect, text, color, nodeIt->shape);
 
     DrawNode(painter, nodeIt->left);
     DrawNode(painter, nodeIt->right);
@@ -58,11 +64,6 @@ void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo)
     QPoint to(nodeItTo->centre.x, nodeItTo->centre.y);
     painter.setPen(Qt::black);
     painter.drawLine(from, to);
-    // if (nodeItTo->shape == GTree::NodeShape::Circle) {
-
-    // } else {
-
-    // }
 }
 
 QColor TreeView::makeQColor(GTree::Color color) {
@@ -88,39 +89,46 @@ QString TreeView::makeQString(GTree::Text text) {
     return QString::fromStdString(text);
 }
 
-QRectF TreeView::CircleToRect(QPointF centre, qScalar radius) {
+QRectF TreeView::CircleToRect(QPointF centre, QScalar radius) {
     QRectF circleRect(centre.x() - radius, centre.y() - radius, radius * 2, radius * 2);
     return circleRect;
 }
 
-QRectF TreeView::GetRect(QPointF centre, qScalar halfWidth) {
+QRectF TreeView::GetRect(QPointF centre, QScalar halfWidth) {
     QRectF rect(centre.x() - halfWidth, centre.y() - halfWidth * 0.5, halfWidth * 2, halfWidth);
     return rect;
 }
 
-void TreeView::DrawCircleWithCenteredText(QPainter &painter, QRectF circleRect, const QString &text,
-                                          const QColor &fillColor) {
-    // Круг
+void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QString &text,
+                                        const QColor &fillColor, GTree::NodeShape shape) {
+    QFont font(fontName, fontSize);
+
     painter.setBrush(fillColor);
     painter.setPen(Qt::black);
-    painter.drawEllipse(circleRect);
+    if (shape == GTree::NodeShape::Circle) {
+        painter.drawEllipse(rect);
+        font.setBold(true);
+    } else {
+        painter.drawRect(rect);
+    }
 
-    // Текст
+    int size = fontSize;
+    while (size > 1) {
+        font.setPointSize(size);
+        painter.setFont(font);
+        QFontMetricsF fm(font);
+        QRectF textRect = fm.boundingRect(text);
+        if (rect.width() - textRect.width() > textIndent &&
+            rect.height() - textRect.height() > textIndent) {
+            std::cout << textRect.width();
+            std::cout << rect.width();
+
+            break;
+        }
+        --size;
+    }
+
     painter.setPen(Qt::white);
-    painter.setFont(QFont("Arial", 12, QFont::Bold));
-    painter.drawText(circleRect, Qt::AlignCenter, text);
-}
-
-void TreeView::DrawRectWithCenteredText(QPainter &painter, QRectF rect, const QString &text,
-                                        const QColor &fillColor) {
-    // Прямоугольник
-    painter.setBrush(fillColor);
-    painter.setPen(Qt::black);
-    painter.drawRect(rect);
-
-    // Текст
-    painter.setPen(Qt::white);
-    painter.setFont(QFont("Arial", 12));
     painter.drawText(rect, Qt::AlignCenter, text);
 }
 

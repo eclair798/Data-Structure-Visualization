@@ -30,10 +30,10 @@ public:
     std::unique_ptr<QPushButton> findButton;
     std::unique_ptr<QPushButton> resetButton;
 
-    std::unique_ptr<QLabel> messageLabel;
-
     std::unique_ptr<QSlider> intervalSlider;
-    std::unique_ptr<QLabel> intervalLabel;
+    std::unique_ptr<QSlider> scaleSlider;
+
+    std::unique_ptr<QLabel> messageLabel;
 };
 
 }  // namespace rbtree

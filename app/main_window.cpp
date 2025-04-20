@@ -24,32 +24,62 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     findButton = std::make_unique<QPushButton>("Find", this);
     resetButton = std::make_unique<QPushButton>("Reset", this);
 
-    // Ползунок таймера
-    intervalSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    intervalSlider->setRange(50, 5000);
-    intervalSlider->setValue(1000);
-
-    messageLabel = std::make_unique<QLabel>("Hello! Create your Red Black Tree!", this);
-
-    intervalLabel = std::make_unique<QLabel>("Time between frames:", this);
-
     rightLayout->addWidget(keyEdit.get());
     rightLayout->addWidget(insertButton.get());
     rightLayout->addWidget(deleteButton.get());
     rightLayout->addWidget(findButton.get());
     rightLayout->addWidget(resetButton.get());
 
-    rightLayout->addWidget(messageLabel.get());
+    // Ползунок таймера
+    intervalSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
+    intervalSlider->setRange(50, 5000);
+    intervalSlider->setValue(1000);
 
-    rightLayout->addWidget(intervalLabel.get());
-    rightLayout->addWidget(intervalSlider.get());
+    QLabel* intervalLabel = new QLabel("Time between frames:", this);
 
-    rightLayout->setSpacing(10);
-    rightLayout->setContentsMargins(10, 10, 10, 10);
+    QWidget* intervalWidget = new QWidget(this);
+    QVBoxLayout* intervalGroupLayout = new QVBoxLayout(intervalWidget);
+    intervalGroupLayout->setContentsMargins(0, 0, 0, 0);
+    intervalGroupLayout->addWidget(intervalLabel);
+    intervalGroupLayout->addWidget(intervalSlider.get());
+    intervalWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    rightLayout->addWidget(intervalWidget);
 
-    mainLayout->addWidget(rightPanel, 1);
+    // Ползунок масштабирования
+    scaleSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
+    scaleSlider->setRange(5, 30);
+    scaleSlider->setValue(10);
 
-    // todo разобраться с деталями отрисовки
+    QLabel* scaleLabel = new QLabel("Picture scaling:", this);
+
+    QWidget* scaleWidget = new QWidget(this);
+    QVBoxLayout* scaleGroupLayout = new QVBoxLayout(scaleWidget);
+    scaleGroupLayout->setContentsMargins(0, 0, 0, 0);
+    scaleGroupLayout->addWidget(scaleLabel);
+    scaleGroupLayout->addWidget(scaleSlider.get());
+    scaleWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    rightLayout->addWidget(scaleWidget);
+
+    // Окошко с сообщением
+    messageLabel = std::make_unique<QLabel>("Hello! Create your Red Black Tree!", this);
+    messageLabel->setWordWrap(true);
+
+    QFrame* messageFrame = new QFrame(this);
+    QVBoxLayout* frameLayout = new QVBoxLayout(messageFrame);
+    frameLayout->addWidget(messageLabel.get());
+    frameLayout->setContentsMargins(8, 8, 8, 8);
+
+    messageFrame->setFrameShape(QFrame::StyledPanel);
+    messageFrame->setFrameShadow(QFrame::Raised);
+    messageFrame->setLineWidth(2);
+
+    rightLayout->addWidget(messageFrame);
+
+    // Вся панель настроек
+    rightPanel->setFixedWidth(200);
+    mainLayout->addWidget(rightPanel);
+
+    resize(500, 400);
 }
 
 }  // namespace rbtree
