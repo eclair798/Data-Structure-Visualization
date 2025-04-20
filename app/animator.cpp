@@ -8,7 +8,7 @@ void Animator::onTimeout() {
     }
 }
 
-Animator::Animator(GeomModel* gModel, QObject* parent)
+Animator::Animator(GeomModel* gModel, int startTimerInterval, QObject* parent)
     : observer_([this](GTreeConstPtr frame) { this->enqueueFrame(frame); }), QObject(parent) {
     gModel->SubscribeFrame(&observer_);
 
@@ -19,7 +19,8 @@ Animator::Animator(GeomModel* gModel, QObject* parent)
     connect(timer_.get(), &QTimer::timeout, this, &Animator::onTimeout);
 
     timer_->setSingleShot(false);
-    timer_->setInterval(startTimerInterval);
+    std::chrono::milliseconds msc(startTimerInterval);
+    timer_->setInterval(msc);
     timer_->start();
 }
 

@@ -46,6 +46,13 @@ public:
 
 private:
     GTreeConstPtr currentFrame_;
+
+    static constexpr const QColor customBlack{0, 0, 0};
+    static constexpr const QColor customLighterBlack{70, 70, 70};
+
+    static constexpr const QColor customDarkRed{140, 0, 0};
+    static constexpr const QColor customLighterDarkRed{200, 0, 0};
+
     static constexpr const int fontSize = 14;
     const QString fontName = "Courier New";
     static constexpr const QScalar textIndent = 1.;

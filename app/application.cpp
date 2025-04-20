@@ -11,8 +11,8 @@ Application::Application(int argc, char* argv[]) {
     tree_ = std::make_unique<RBTreeINT>();
     geomModel_ = std::make_unique<GeomModel>(tree_.get());
 
-    animator_ =
-        std::make_unique<Animator>(geomModel_.get(), window_.get());  // внутри заводится таймер
+    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->intervalSlider->value(),
+                                           window_.get());  // внутри заводится таймер
 
     treeController_ =
         std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
@@ -49,7 +49,17 @@ void Application::SetupConnections() {
 
     // connect Контроллера с сообщением для пользователя
     QObject::connect(treeController_.get(), &TreeController::NewMessage,
-                     window_->messageLabel.get(), &QLabel::setText);
+                     [this](const QString& message) {
+                         window_->messageLabel->setStyleSheet("");
+                         window_->messageLabel->setText(message);
+                     });
+
+    // connect Контроллера с сообщением об ошибке
+    QObject::connect(treeController_.get(), &TreeController::NewError,
+                     [this](const QString& error) {
+                         window_->messageLabel->setStyleSheet("color: red;");
+                         window_->messageLabel->setText(error);
+                     });
 }
 
 int Application::Run() {

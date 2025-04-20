@@ -9,9 +9,10 @@ class GeomTree {
 public:
     enum class Color : std::uint8_t {
         Black,
+        Gray,
         Red,
+        LightRed,
         Green,  // нашли вершину
-        Gray,   // промежуточный этап
     };
 
     using Scalar = double;
@@ -62,7 +63,12 @@ public:
         if (it->status == RBTreeKT::NodeStatus::Found) {
             return Color::Green;
         }
-        return Color::Gray;
+        switch (it->color) {
+            case RBTreeKT::NodeColor::Red:
+                return Color::LightRed;
+            default:
+                return Color::Gray;
+        }
     }
 
 public:

@@ -59,6 +59,9 @@ public:
 
     // Вставка нового ключа
     bool Insert(const KeyType& key) {
+        StatusReset();
+        NotifyStep();
+
         if (Search(key)) {
             return false;  // Ключ уже в дереве
         }
@@ -70,6 +73,7 @@ public:
             newNode->color = NodeColor::Black;
             root_ = std::move(newNode);
 
+            StatusReset();
             NotifyStep();
             return true;
         }
@@ -98,9 +102,13 @@ public:
             parent->right = std::move(newNode);
         }
 
+        rawNew->status = NodeStatus::Found;
+        NotifyStep();
+
         // fixup
         InsertFixup(rawNew);
 
+        StatusReset();
         NotifyStep();
         return true;
     }
@@ -116,6 +124,9 @@ public:
     * 3) Если удалённая (или перемещённая) вершина была чёрной, делаем fixup.
     */
     bool Delete(const KeyType& key) {
+        StatusReset();
+        NotifyStep();
+
         Node* z = SearchNode(key);
         if (!z) {
             return false;
@@ -187,6 +198,7 @@ public:
         }
 
         if (yOriginalColor == NodeColor::Red) {
+            StatusReset();
             NotifyStep();
             return true;
         }
@@ -197,18 +209,23 @@ public:
                    "left is different");
             x->color = NodeColor::Black;
 
+            StatusReset();
             NotifyStep();
             return true;
         }
 
+        NotifyStep();
+
         if (root_) {
             DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
         }
+
+        StatusReset();
         NotifyStep();
         return true;
     }
 
-    bool Search(const KeyType& key) const {
+    bool Search(const KeyType& key) {
         return (SearchNode(key) != nullptr);
     }
 
@@ -231,7 +248,6 @@ public:
         if (now->right) {
             StatusReset(now->right.get());
         }
-        NotifyStep();
     }
 
     template<typename KT>
@@ -267,12 +283,28 @@ private:
     *       B   C       A   B
     */
     void RotateLeft(Node* x) {
+        StatusReset();
+        NotifyStep();
+
         if (!x || !x->right) {
             return;
         }
+        Node* y = x->right.get();
+
+        x->status = NodeStatus::Intermediate;
+        y->status = NodeStatus::Intermediate;
+        if (x->left) {
+            x->left->status = NodeStatus::Intermediate;
+        }
+        if (y->left) {
+            y->left->status = NodeStatus::Intermediate;
+        }
+        if (y->right) {
+            y->right->status = NodeStatus::Intermediate;
+        }
+        NotifyStep();
 
         NodePtr oldY = std::move(x->right);  // "упаковали" y во временный unique_ptr
-        Node* y = oldY.get();
         y->parent = nullptr;
 
         x->right = std::move(y->left);  // в этот момент y отвязался от unique_ptr
@@ -297,6 +329,7 @@ private:
         y->left->parent = y;
 
         NotifyStep();
+        StatusReset();
     }
 
     /*
@@ -307,12 +340,28 @@ private:
     *     B   C           C   A
     */
     void RotateRight(Node* x) {
+        StatusReset();
+        NotifyStep();
+
         if (!x || !x->left) {
             return;
         }
+        Node* y = x->left.get();
+
+        x->status = NodeStatus::Intermediate;
+        y->status = NodeStatus::Intermediate;
+        if (x->right) {
+            x->right->status = NodeStatus::Intermediate;
+        }
+        if (y->left) {
+            y->left->status = NodeStatus::Intermediate;
+        }
+        if (y->right) {
+            y->right->status = NodeStatus::Intermediate;
+        }
+        NotifyStep();
 
         NodePtr oldY = std::move(x->left);
-        Node* y = oldY.get();
         y->parent = nullptr;
 
         // Перенос "правого поддерева y" на "левое поддерево x"
@@ -334,6 +383,7 @@ private:
         y->right->parent = y;
 
         NotifyStep();
+        StatusReset();
     }
 
     /*
@@ -342,6 +392,9 @@ private:
     * Если дядя красный - просто перекрашиваем, иначе делаем повороты.
     */
     void InsertFixup(Node* x) {
+        StatusReset();
+        NotifyStep();
+
         // Пока есть родитель и он красный - нарушение свойства 3
         while (x != root_.get() && x->parent->color == NodeColor::Red) {
             Node* parent = x->parent;
@@ -407,6 +460,9 @@ private:
     * Идём вверх до корня, пока не снимем двойную чёрность.
     */
     void DeleteFixup(Node* parent) {
+        StatusReset();
+        NotifyStep();
+
         Node* x = nullptr;
         while (x != root_.get() && (!x || x->color == NodeColor::Black)) {
             parent = x ? x->parent : parent;
@@ -503,16 +559,23 @@ private:
     }
 
     // Просто ищет ноду с ключом. Если такого нет, то просто nullptr
-    Node* SearchNode(const KeyType& key) const {
+    Node* SearchNode(const KeyType& key) {
+        StatusReset();
+        NotifyStep();
+
         Node* current = root_.get();
         while (current != nullptr) {
+            current->status = NodeStatus::Intermediate;
             if (key < current->key) {
                 current = current->left.get();
             } else if (key > current->key) {
                 current = current->right.get();
             } else {
+                current->status = NodeStatus::Found;
+                NotifyStep();
                 return current;
             }
+            NotifyStep();
         }
         return nullptr;
     }

@@ -16,7 +16,7 @@ class Animator : public QObject {
 public:
     using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
 
-    Animator(GeomModel* gModel, QObject* parent = nullptr);
+    Animator(GeomModel* gModel, int startTimerInterval, QObject* parent = nullptr);
 
     GTreeConstPtr PopFrame();
 
@@ -33,8 +33,6 @@ private:
 public:
     GTreeObserver observer_;
     std::unique_ptr<QTimer> timer_;
-
-    static constexpr const std::chrono::milliseconds startTimerInterval{1000};
 
 private:
     std::queue<GTreeConstPtr> frames_;

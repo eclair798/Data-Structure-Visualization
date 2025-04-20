@@ -69,11 +69,13 @@ void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo)
 QColor TreeView::makeQColor(GTree::Color color) {
     switch (color) {
         case GTree::Color::Red:
-            return Qt::darkRed;
+            return customDarkRed;
         case GTree::Color::Black:
-            return Qt::black;
+            return customBlack;
         case GTree::Color::Gray:
-            return Qt::darkGray;
+            return customLighterBlack;
+        case GTree::Color::LightRed:
+            return customLighterDarkRed;
         case GTree::Color::Green:
             return Qt::darkGreen;
         default:

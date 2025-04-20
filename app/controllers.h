@@ -1,9 +1,14 @@
 #pragma once
 
+#include <format>
+
 #include <QObject>
 #include <QTimer>
 #include <QLineEdit>
 #include <QSlider>
+#include <QString>
+
+#include <QMessageBox>
 
 #include "geom_model.h"
 
@@ -23,6 +28,7 @@ public slots:
 
 signals:
     void NewMessage(const QString& message);
+    void NewError(const QString& message);
 
 private:
     RBTreeINT* tree_;

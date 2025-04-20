@@ -10,42 +10,54 @@ void TreeController::HandleInsert() {
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
-        // todo error
+        NewError("Input error. An integer is required");
+        keyEdit_->clear();
         return;
     }
     if (tree_->Insert(key)) {
-        NewMessage("Key inserted successfully.");
+        std::string msg = std::format("Key {} inserted successfully.", key);
+        NewMessage(QString::fromStdString(msg));
     } else {
-        NewMessage("Key already exist.");
+        std::string msg = std::format("Key {} already exist.", key);
+        NewMessage(QString::fromStdString(msg));
     }
+    keyEdit_->clear();
 }
 
 void TreeController::HandleDelete() {
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
-        // todo error
+        NewError("Input error. An integer is required");
+        keyEdit_->clear();
         return;
     }
     if (tree_->Delete(key)) {
-        NewMessage("Key deleted successfully.");
+        std::string msg = std::format("Key {} deleted successfully.", key);
+        NewMessage(QString::fromStdString(msg));
     } else {
-        NewMessage("Key does not exist.");
+        std::string msg = std::format("Key {} does not exist.", key);
+        NewMessage(QString::fromStdString(msg));
     }
+    keyEdit_->clear();
 }
 
 void TreeController::HandleFind() {
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
-        // todo error
+        NewError("Input error. An integer is required");
+        keyEdit_->clear();
         return;
     }
     if (tree_->Search(key)) {
-        NewMessage("Key found.");
+        std::string msg = std::format("Key {} found.", key);
+        NewMessage(QString::fromStdString(msg));
     } else {
-        NewMessage("Key not found.");
+        std::string msg = std::format("Key {} not found.", key);
+        NewMessage(QString::fromStdString(msg));
     }
+    keyEdit_->clear();
 }
 
 void TreeController::HandleReset() {
