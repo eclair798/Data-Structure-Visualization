@@ -54,12 +54,13 @@ public:
     }
 
 public:
-    RBTree() = default;
+    RBTree() {
+    }
 
     // Вставка нового ключа
-    void Insert(const KeyType& key) {
+    bool Insert(const KeyType& key) {
         if (Search(key)) {
-            return;  // Ключ уже в дереве
+            return false;  // Ключ уже в дереве
         }
 
         NodePtr newNode = std::make_unique<Node>(key);
@@ -68,7 +69,9 @@ public:
         if (!root_) {
             newNode->color = NodeColor::Black;
             root_ = std::move(newNode);
-            return;
+
+            NotifyStep();
+            return true;
         }
         newNode->color = NodeColor::Red;
 
@@ -97,6 +100,9 @@ public:
 
         // fixup
         InsertFixup(rawNew);
+
+        NotifyStep();
+        return true;
     }
 
     /* 
@@ -109,10 +115,10 @@ public:
     *      копируем его ключ в p, а дальше удаляем найденный узел как в случае "нет или один ребёнок".
     * 3) Если удалённая (или перемещённая) вершина была чёрной, делаем fixup.
     */
-    void Delete(const KeyType& key) {
+    bool Delete(const KeyType& key) {
         Node* z = SearchNode(key);
         if (!z) {
-            return;
+            return false;
         }
 
         // y - удаляемый узел
@@ -177,7 +183,8 @@ public:
         }
 
         if (yOriginalColor == NodeColor::Red) {
-            return;
+            NotifyStep();
+            return true;
         }
         if (x) {
             assert(x->color == NodeColor::Red &&
@@ -185,10 +192,16 @@ public:
                    "the "
                    "left is different");
             x->color = NodeColor::Black;
-            return;
+
+            NotifyStep();
+            return true;
         }
 
-        DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
+        if (root_) {
+            DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
+        }
+        NotifyStep();
+        return true;
     }
 
     bool Search(const KeyType& key) const {
@@ -197,6 +210,7 @@ public:
 
     void Reset() {
         root_.reset();
+        NotifyStep();
     }
 
     void StatusReset(Node* now = nullptr) {
@@ -213,6 +227,7 @@ public:
         if (now->right) {
             StatusReset(now->right.get());
         }
+        NotifyStep();
     }
 
     template<typename KT>
@@ -276,6 +291,8 @@ private:
         // y->left становится x
         y->left = std::move(oldX);
         y->left->parent = y;
+
+        NotifyStep();
     }
 
     /*
@@ -311,6 +328,8 @@ private:
 
         y->right = std::move(oldX);
         y->right->parent = y;
+
+        NotifyStep();
     }
 
     /*

@@ -36,7 +36,7 @@ public:
     TimerController(QTimer* timer, QObject* parent = nullptr);
 
 public slots:
-    void HandleTimerChange(int value);
+    void HandleTimerChange(int val);
 
 private:
     QTimer* timer_;

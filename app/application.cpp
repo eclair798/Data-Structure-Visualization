@@ -39,7 +39,7 @@ void Application::SetupConnections() {
     QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
                      &TreeController::HandleReset);
 
-    // connect Ползунока с контроллером
+    // connect Ползунка с контроллером
     QObject::connect(window_->intervalSlider.get(), &QSlider::valueChanged, timerController_.get(),
                      &TimerController::HandleTimerChange);
 

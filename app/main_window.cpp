@@ -26,8 +26,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     // Ползунок таймера
     intervalSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    intervalSlider->setRange(10, 1000);
-    intervalSlider->setValue(500);
+    intervalSlider->setRange(50, 5000);
+    intervalSlider->setValue(1000);
 
     messageLabel = std::make_unique<QLabel>("Hello! Create your Red Black Tree!", this);
 

@@ -12,6 +12,8 @@ Animator::Animator(GeomModel* gModel, QObject* parent)
     : observer_([this](GTreeConstPtr frame) { this->enqueueFrame(frame); }), QObject(parent) {
     gModel->SubscribeFrame(&observer_);
 
+    enqueueFrame(gModel->GetCurrentFrame());
+
     timer_ = std::make_unique<QTimer>(this);
 
     connect(timer_.get(), &QTimer::timeout, this, &Animator::onTimeout);
@@ -26,6 +28,7 @@ void Animator::enqueueFrame(GTreeConstPtr frame) {
 }
 
 GTreeConstPtr Animator::PopFrame() {
+    assert(!frames_.empty() && "Error in Animator: pop from empty queue");
     GTreeConstPtr frame = frames_.front();
     frames_.pop();
     return frame;

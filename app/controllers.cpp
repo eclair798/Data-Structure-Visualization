@@ -8,31 +8,43 @@ TreeController::TreeController(RBTreeINT* tree, QLineEdit* keyEdit, QObject* par
 
 void TreeController::HandleInsert() {
     bool ok;
-    int value = keyEdit_->text().toInt(&ok);
-    if (ok) {
-        tree_->Insert(value);
-    } else {
+    int key = keyEdit_->text().toInt(&ok);
+    if (!ok) {
         // todo error
+        return;
+    }
+    if (tree_->Insert(key)) {
+        NewMessage("Key inserted successfully.");
+    } else {
+        NewMessage("Key already exist.");
     }
 }
 
 void TreeController::HandleDelete() {
     bool ok;
-    int value = keyEdit_->text().toInt(&ok);
-    if (ok) {
-        tree_->Delete(value);
-    } else {
+    int key = keyEdit_->text().toInt(&ok);
+    if (!ok) {
         // todo error
+        return;
+    }
+    if (tree_->Delete(key)) {
+        NewMessage("Key deleted successfully.");
+    } else {
+        NewMessage("Key does not exist.");
     }
 }
 
 void TreeController::HandleFind() {
     bool ok;
-    int value = keyEdit_->text().toInt(&ok);
-    if (ok) {
-        tree_->Search(value);
-    } else {
+    int key = keyEdit_->text().toInt(&ok);
+    if (!ok) {
         // todo error
+        return;
+    }
+    if (tree_->Search(key)) {
+        NewMessage("Key found.");
+    } else {
+        NewMessage("Key not found.");
     }
 }
 
@@ -43,8 +55,9 @@ void TreeController::HandleReset() {
 TimerController::TimerController(QTimer* timer, QObject* parent) : timer_(timer), QObject(parent) {
 }
 
-void TimerController::HandleTimerChange(int value) {
-    // todo
+void TimerController::HandleTimerChange(int val) {
+    std::chrono::milliseconds msc(val);
+    timer_->setInterval(msc);
 }
 
 }  // namespace rbtree

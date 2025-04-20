@@ -34,7 +34,7 @@ public:
     GTreeObserver observer_;
     std::unique_ptr<QTimer> timer_;
 
-    static constexpr const std::chrono::milliseconds startTimerInterval{500};
+    static constexpr const std::chrono::milliseconds startTimerInterval{1000};
 
 private:
     std::queue<GTreeConstPtr> frames_;
