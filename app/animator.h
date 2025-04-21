@@ -16,7 +16,7 @@ class Animator : public QObject {
 public:
     using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
 
-    Animator(GeomModel* gModel, int startTimerInterval, QObject* parent = nullptr);
+    Animator(GeomModel* gModel, int startRate, int maxRate, QObject* parent = nullptr);
 
     GTreeConstPtr PopFrame();
 

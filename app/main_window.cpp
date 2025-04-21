@@ -7,7 +7,7 @@ const QString MainWindow::kDeleteStr = "Delete";
 const QString MainWindow::kFindStr = "Find";
 const QString MainWindow::kResetStr = "Reset";
 
-const QString MainWindow::kTimerComment = "Time between frames:";
+const QString MainWindow::kRateComment = "Frame rate:";
 const QString MainWindow::kScaleComment = "Picture scaling:";
 const QString MainWindow::kStartMessage = "Hello! Create your Red Black Tree!";
 
@@ -19,7 +19,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     treeView = std::make_unique<TreeView>(this);
 
-    mainLayout->addWidget(treeView.get(), 3);
+    QScrollArea* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setWidget(treeView.get());
+
+    mainLayout->addWidget(scrollArea, 3);
 
     QWidget* rightPanel = new QWidget(this);
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
@@ -40,19 +44,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rightLayout->addWidget(resetButton.get());
 
     // Ползунок таймера
-    timerSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    timerSlider->setRange(kTimerRange.first, kTimerRange.second);
-    timerSlider->setValue(kStartTimer);
+    rateSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
+    rateSlider->setRange(kRateRange.first, kRateRange.second);
+    rateSlider->setValue(kStartRate);
 
-    QLabel* timerLabel = new QLabel(kTimerComment, this);
+    QLabel* rateLabel = new QLabel(kRateComment, this);
 
-    QWidget* timerWidget = new QWidget(this);
-    QVBoxLayout* timerGroupLayout = new QVBoxLayout(timerWidget);
-    timerGroupLayout->setContentsMargins(0, 0, 0, 0);
-    timerGroupLayout->addWidget(timerLabel);
-    timerGroupLayout->addWidget(timerSlider.get());
-    timerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-    rightLayout->addWidget(timerWidget);
+    QWidget* rateWidget = new QWidget(this);
+    QVBoxLayout* rateGroupLayout = new QVBoxLayout(rateWidget);
+    rateGroupLayout->setContentsMargins(0, 0, 0, 0);
+    rateGroupLayout->addWidget(rateLabel);
+    rateGroupLayout->addWidget(rateSlider.get());
+    rateWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    rightLayout->addWidget(rateWidget);
 
     // Ползунок масштабирования
     scaleSlider = std::make_unique<QSlider>(Qt::Horizontal, this);

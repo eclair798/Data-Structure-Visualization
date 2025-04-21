@@ -9,11 +9,19 @@ TreeView::TreeView(QWidget *parent) : QWidget(parent) {
 
 void TreeView::ShowFrame(GTreeConstPtr frame) {
     currentFrame_ = std::move(frame);
-    update();
+    UpdatePicture();
 }
 
-void TreeView::HandleScaleChange(int val) {
-    scaler = val / 10.0;
+void TreeView::HandleScaleChange(int scale, float scaleOfScale) {
+    scaler = scale / scaleOfScale;
+    UpdatePicture();
+}
+
+void TreeView::UpdatePicture() {
+    auto w = currentFrame_->Width();
+    auto h = currentFrame_->Height();
+    setMinimumWidth(w * scaler);
+    setMinimumHeight(h * scaler);
     update();
 }
 

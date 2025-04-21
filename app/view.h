@@ -19,12 +19,14 @@ public:
     void ShowFrame(GTreeConstPtr frame);
 
 public slots:
-    void HandleScaleChange(int val);
+    void HandleScaleChange(int scale, float scaleOfScale);
 
 protected:
     void paintEvent(QPaintEvent*) override;
 
 private:
+    void UpdatePicture();
+
     void DrawTree(QPainter& painter);
     void DrawNode(QPainter& painter, ConstIt nodeIt);
     void DrawEdge(QPainter& painter, ConstIt nodeItFrom, ConstIt nodeItTo);

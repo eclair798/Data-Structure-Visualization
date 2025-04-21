@@ -27,7 +27,7 @@ private:
     std::unique_ptr<Animator> animator_;
 
     std::unique_ptr<TreeController> treeController_;
-    std::unique_ptr<TimerController> timerController_;
+    std::unique_ptr<TimerController> rateController_;
 
     void SetupConnections();
 };

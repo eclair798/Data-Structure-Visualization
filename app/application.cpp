@@ -11,12 +11,13 @@ Application::Application(int argc, char* argv[]) {
     tree_ = std::make_unique<RBTreeINT>();
     geomModel_ = std::make_unique<GeomModel>(tree_.get());
 
-    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->timerSlider->value(),
+    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->rateSlider->value(),
+                                           window_->kRateRange.second,
                                            window_.get());  // внутри заводится таймер
 
     treeController_ =
         std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
-    timerController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
+    rateController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
 
     SetupConnections();
 }
@@ -39,13 +40,15 @@ void Application::SetupConnections() {
     QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
                      &TreeController::HandleReset);
 
-    // connect Ползунка таймера с контроллером
-    QObject::connect(window_->timerSlider.get(), &QSlider::valueChanged, timerController_.get(),
-                     &TimerController::HandleTimerChange);
+    // connect Ползунка скорости с контроллером
+    QObject::connect(window_->rateSlider.get(), &QSlider::valueChanged, [this](int rate) {
+        rateController_->HandleRateChange(rate, window_->kRateRange.second);
+    });
 
     // connect Ползунка масштабирования с вьюхой
-    QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, window_->treeView.get(),
-                     &TreeView::HandleScaleChange);
+    QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, [this](int scale) {
+        window_->treeView->HandleScaleChange(scale, window_->kScaleRangeScale);
+    });
 
     // connect Контроллера с сообщением для пользователя
     QObject::connect(treeController_.get(), &TreeController::NewMessage,
@@ -65,7 +68,6 @@ void Application::SetupConnections() {
 int Application::Run() {
     window_->show();
     return qApp_->exec();
-    // todo ?
 }
 
 }  // namespace rbtree

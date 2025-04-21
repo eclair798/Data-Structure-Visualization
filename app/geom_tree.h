@@ -82,6 +82,7 @@ public:
 
         Text key;
         Scalar widthOfSubtree;
+        Scalar heightOfSubtree;
 
         GeomNodePtr left = nullptr;
         GeomNodePtr right = nullptr;
@@ -126,6 +127,14 @@ public:
         return leftW;
     }
 
+    Scalar Width() const {
+        return root_->widthOfSubtree + kIndent * 2;
+    }
+
+    Scalar Height() const {
+        return root_->heightOfSubtree + kIndent * 2;
+    }
+
 private:
     Scalar SetNode(GeomNodePtr& curNode, typename RBTreeKT::ConstIt it) {
         auto node = std::make_unique<GeomNode>();
@@ -135,6 +144,7 @@ private:
             node->key = "NIL";
 
             node->widthOfSubtree = node->halfWidth * 2;
+            node->heightOfSubtree = 0;
             curNode = std::move(node);
             return curNode->widthOfSubtree;
         }
@@ -152,6 +162,10 @@ private:
         node->widthOfSubtree = 2 * kHalfWidthOfNodeView + leftWidth + rightWidth;
         node->widthOfSubtree += (leftWidth > 0 ? kMinDistBetweenNodes : 0);
         node->widthOfSubtree += (rightWidth > 0 ? kMinDistBetweenNodes : 0);
+
+        Scalar leftHeight = node->left->heightOfSubtree;
+        Scalar rightHeight = node->right->heightOfSubtree;
+        node->heightOfSubtree = std::max(leftHeight, rightHeight) + kHeightOfLevel;
 
         curNode = std::move(node);
 

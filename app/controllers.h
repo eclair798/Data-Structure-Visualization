@@ -42,7 +42,7 @@ public:
     TimerController(QTimer* timer, QObject* parent = nullptr);
 
 public slots:
-    void HandleTimerChange(int val);
+    void HandleRateChange(int rate, int maxRate);
 
 private:
     QTimer* timer_;
