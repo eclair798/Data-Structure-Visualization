@@ -1,3 +1,4 @@
+// NOLINTBEGIN
 #ifndef LIBRARY_OBSERVER_SIMPLE_H
 #define LIBRARY_OBSERVER_SIMPLE_H
 
@@ -431,3 +432,5 @@ public:
 }  // namespace NSLibrary
 
 #endif  // LIBRARY_OBSERVER_SIMPLE_H
+
+// NOLINTEND

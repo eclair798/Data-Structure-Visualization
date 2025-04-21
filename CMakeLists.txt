@@ -11,6 +11,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_CLANG_TIDY "/opt/homebrew/opt/llvm/bin/clang-tidy;-p=build")
+
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
 #add_compile_definitions(FORCE_ASSERT)

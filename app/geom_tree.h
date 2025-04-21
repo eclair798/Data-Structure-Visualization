@@ -75,7 +75,7 @@ public:
     struct GeomNode {
         using GeomNodePtr = std::unique_ptr<GeomNode>;
         Point centre;
-        Scalar halfWidth = halfWidthOfNodeView;
+        Scalar halfWidth = kHalfWidthOfNodeView;
         NodeShape shape = NodeShape::Circle;
 
         Color color = Color::Black;
@@ -107,7 +107,7 @@ public:
         SetNode(root_, tree.GetRoot());
         SetCoordinates(root_);
 
-        Point shift{LeftWidth() + indent, indent};
+        Point shift{LeftWidth() + kIndent, kIndent};
         ShiftCoordinates(root_, shift);
         AlignCoordinates(root_);
     }
@@ -119,9 +119,9 @@ public:
         }
         Scalar leftW;
         if (!root_->left) {
-            leftW = halfWidthOfNodeView;
+            leftW = kHalfWidthOfNodeView;
         } else {
-            leftW = root_->left->widthOfSubtree + minDistBetweenNodes + halfWidthOfNodeView;
+            leftW = root_->left->widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
         }
         return leftW;
     }
@@ -141,7 +141,7 @@ private:
 
         node->key = std::to_string(it->key);
         node->color = GetNodeColor(it);
-        node->halfWidth = halfWidthOfNodeView;
+        node->halfWidth = kHalfWidthOfNodeView;
 
         Scalar leftWidth = SetNode(node->left, it.Left());
         Scalar rightWidth = SetNode(node->right, it.Right());
@@ -149,9 +149,9 @@ private:
         node->left->parent = node.get();
         node->right->parent = node.get();
 
-        node->widthOfSubtree = 2 * halfWidthOfNodeView + leftWidth + rightWidth;
-        node->widthOfSubtree += (leftWidth > 0 ? minDistBetweenNodes : 0);
-        node->widthOfSubtree += (rightWidth > 0 ? minDistBetweenNodes : 0);
+        node->widthOfSubtree = 2 * kHalfWidthOfNodeView + leftWidth + rightWidth;
+        node->widthOfSubtree += (leftWidth > 0 ? kMinDistBetweenNodes : 0);
+        node->widthOfSubtree += (rightWidth > 0 ? kMinDistBetweenNodes : 0);
 
         curNode = std::move(node);
 
@@ -163,7 +163,7 @@ private:
             return;
         }
         if (curNode.get() == root_.get()) {
-            curNode->centre = rootCoordinates;
+            curNode->centre = kRootCoordinates;
             SetCoordinates(curNode->left);
             SetCoordinates(curNode->right);
             return;
@@ -173,22 +173,22 @@ private:
         Scalar xShift;
 
         if (!curNode->left) {
-            xShift = halfWidthOfNodeView;
+            xShift = kHalfWidthOfNodeView;
         } else {
-            xShift = curNode->left->widthOfSubtree + minDistBetweenNodes + halfWidthOfNodeView;
+            xShift = curNode->left->widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
         }
 
         if (curNode.get() == parent->left.get()) {
             xShift = curNode->widthOfSubtree - xShift;
         }
 
-        xShift += halfWidthOfNodeView + minDistBetweenNodes;
+        xShift += kHalfWidthOfNodeView + kMinDistBetweenNodes;
 
         if (curNode.get() == parent->left.get()) {
             xShift = -xShift;
         }
 
-        Scalar yShift = heightOfLevel;
+        Scalar yShift = kHeightOfLevel;
 
         Point shift = {xShift, yShift};
         curNode->centre = parent->centre + shift;
@@ -219,11 +219,11 @@ private:
     GeomNodePtr root_;
 
 public:
-    static constexpr const Scalar heightOfLevel = 40.;
-    static constexpr const Scalar minDistBetweenNodes = 0.;
-    static constexpr const Scalar halfWidthOfNodeView = 15.;
-    static constexpr const Point rootCoordinates = {0, 0};
-    static constexpr const Scalar indent = 30.;
+    static constexpr const Scalar kHeightOfLevel = 40.;
+    static constexpr const Scalar kMinDistBetweenNodes = 0.;
+    static constexpr const Scalar kHalfWidthOfNodeView = 15.;
+    static constexpr const Point kRootCoordinates = {0, 0};
+    static constexpr const Scalar kIndent = 30.;
 };
 
 }  // namespace rbtree

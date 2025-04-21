@@ -179,6 +179,8 @@ public:
             }
             yRef = std::move(yRight);
 
+            NotifyStep();
+
             // поднимаем y на место z
             NodePtr& zRef = ParentRef(z);
 
@@ -197,6 +199,8 @@ public:
             zRef = std::move(tmpHolder);
         }
 
+        NotifyStep();
+
         if (yOriginalColor == NodeColor::Red) {
             StatusReset();
             NotifyStep();
@@ -209,13 +213,13 @@ public:
                    "left is different");
             x->color = NodeColor::Black;
 
+            NotifyStep();
             StatusReset();
             NotifyStep();
             return true;
         }
 
-        NotifyStep();
-
+        // fixup
         if (root_) {
             DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
         }
@@ -302,7 +306,7 @@ private:
         if (y->right) {
             y->right->status = NodeStatus::Intermediate;
         }
-        NotifyStep();
+        NotifyStepTwice();
 
         NodePtr oldY = std::move(x->right);  // "упаковали" y во временный unique_ptr
         y->parent = nullptr;
@@ -328,7 +332,7 @@ private:
         y->left = std::move(oldX);
         y->left->parent = y;
 
-        NotifyStep();
+        NotifyStepTwice();
         StatusReset();
     }
 
@@ -359,7 +363,7 @@ private:
         if (y->right) {
             y->right->status = NodeStatus::Intermediate;
         }
-        NotifyStep();
+        NotifyStepTwice();
 
         NodePtr oldY = std::move(x->left);
         y->parent = nullptr;
@@ -382,7 +386,7 @@ private:
         y->right = std::move(oldX);
         y->right->parent = y;
 
-        NotifyStep();
+        NotifyStepTwice();
         StatusReset();
     }
 
@@ -412,8 +416,14 @@ private:
                 if (uncle && uncle->color == NodeColor::Red) {
                     // Перекрашиваем
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     uncle->color = NodeColor::Black;
+                    NotifyStep();
+
                     grandparent->color = NodeColor::Red;
+                    NotifyStep();
+
                     x = grandparent;
                 } else {
                     // 2) Дядя чёрный
@@ -424,7 +434,11 @@ private:
                         grandparent = parent->parent;
                     }
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     grandparent->color = NodeColor::Red;
+                    NotifyStep();
+
                     RotateRight(grandparent);
                 }
             } else {
@@ -434,8 +448,14 @@ private:
                 // 1) Дядя красный
                 if (uncle && uncle->color == NodeColor::Red) {
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     uncle->color = NodeColor::Black;
+                    NotifyStep();
+
                     grandparent->color = NodeColor::Red;
+                    NotifyStep();
+
                     x = grandparent;
                 } else {
                     // 2) Дядя чёрный
@@ -446,12 +466,17 @@ private:
                         grandparent = parent->parent;
                     }
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     grandparent->color = NodeColor::Red;
+                    NotifyStep();
+
                     RotateLeft(grandparent);
                 }
             }
         }
         root_->color = NodeColor::Black;
+        NotifyStep();
     }
 
     /*
@@ -476,6 +501,8 @@ private:
                 if (w->color == NodeColor::Red) {
                     w->color = NodeColor::Black;
                     parent->color = NodeColor::Red;
+                    NotifyStep();
+
                     RotateLeft(parent);
                     w = parent->right.get();
                     assert(w && "Error in DeleteFixup: x has not brother");
@@ -485,6 +512,8 @@ private:
                 if ((!w->left || w->left->color == NodeColor::Black) &&
                     (!w->right || w->right->color == NodeColor::Black)) {
                     w->color = NodeColor::Red;
+                    NotifyStep();
+
                     x = parent;
                     continue;
                 } else {
@@ -492,8 +521,10 @@ private:
                     if (!w->right || w->right->color == NodeColor::Black) {
                         if (w->left) {
                             w->left->color = NodeColor::Black;
+                            NotifyStep();
                         }
                         w->color = NodeColor::Red;
+                        NotifyStep();
                         RotateRight(w);
                         w = parent->right.get();
                         if (!w) {
@@ -503,9 +534,14 @@ private:
                     }
                     // 4. Правый ребёнок брата красный
                     w->color = parent->color;
+                    NotifyStep();
+
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     if (w->right) {
                         w->right->color = NodeColor::Black;
+                        NotifyStep();
                     }
                     RotateLeft(parent);
                     x = root_.get();
@@ -518,7 +554,11 @@ private:
                 // 1. Брат красный
                 if (w->color == NodeColor::Red) {
                     w->color = NodeColor::Black;
+                    NotifyStep();
+
                     parent->color = NodeColor::Red;
+                    NotifyStep();
+
                     RotateRight(parent);
                     w = parent->left.get();
                     assert(w && "Error in DeleteFixup: x has not brother");
@@ -528,6 +568,8 @@ private:
                 if ((!w->left || w->left->color == NodeColor::Black) &&
                     (!w->right || w->right->color == NodeColor::Black)) {
                     w->color = NodeColor::Red;
+                    NotifyStep();
+
                     x = parent;
                     continue;
                 } else {
@@ -535,8 +577,11 @@ private:
                     if (!w->left || w->left->color == NodeColor::Black) {
                         if (w->right) {
                             w->right->color = NodeColor::Black;
+                            NotifyStep();
                         }
                         w->color = NodeColor::Red;
+                        NotifyStep();
+
                         RotateLeft(w);
                         w = parent->left.get();
                         if (!w) {
@@ -546,9 +591,14 @@ private:
                     }
                     // 4. Левый ребёнок брата красный
                     w->color = parent->color;
+                    NotifyStep();
+
                     parent->color = NodeColor::Black;
+                    NotifyStep();
+
                     if (w->left) {
                         w->left->color = NodeColor::Black;
+                        NotifyStep();
                     }
                     RotateRight(parent);
                     x = root_.get();
@@ -556,6 +606,7 @@ private:
             }
         }
         x->color = NodeColor::Black;
+        NotifyStep();
     }
 
     // Просто ищет ноду с ключом. Если такого нет, то просто nullptr
@@ -572,7 +623,7 @@ private:
                 current = current->right.get();
             } else {
                 current->status = NodeStatus::Found;
-                NotifyStep();
+                NotifyStepTwice();
                 return current;
             }
             NotifyStep();
@@ -581,11 +632,17 @@ private:
     }
 
     // Минимальный ключ в поддереве
-    Node* Minimum(Node* subtreeRoot) const {
+    Node* Minimum(Node* subtreeRoot) {
+        NotifyStep();
+
         Node* current = subtreeRoot;
         while (current->left) {
+            current->status = NodeStatus::Intermediate;
             current = current->left.get();
+            NotifyStep();
         }
+        current->status = NodeStatus::Found;
+        NotifyStepTwice();
         return current;
     }
 
@@ -613,6 +670,11 @@ public:
 private:
     void NotifyStep() {  // todo: проставить NotifyStep в местах изменения дерева
         observable_.notify();
+    }
+
+    void NotifyStepTwice() {
+        NotifyStep();
+        NotifyStep();
     }
 
 private:

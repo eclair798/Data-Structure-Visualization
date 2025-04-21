@@ -2,6 +2,15 @@
 
 namespace rbtree {
 
+const QString MainWindow::kInsertStr = "Insert";
+const QString MainWindow::kDeleteStr = "Delete";
+const QString MainWindow::kFindStr = "Find";
+const QString MainWindow::kResetStr = "Reset";
+
+const QString MainWindow::kTimerComment = "Time between frames:";
+const QString MainWindow::kScaleComment = "Picture scaling:";
+const QString MainWindow::kStartMessage = "Hello! Create your Red Black Tree!";
+
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QWidget* centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -19,10 +28,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     keyEdit = std::make_unique<QLineEdit>(this);
 
     // Кнопки
-    insertButton = std::make_unique<QPushButton>("Insert", this);
-    deleteButton = std::make_unique<QPushButton>("Delete", this);
-    findButton = std::make_unique<QPushButton>("Find", this);
-    resetButton = std::make_unique<QPushButton>("Reset", this);
+    insertButton = std::make_unique<QPushButton>(kInsertStr, this);
+    deleteButton = std::make_unique<QPushButton>(kDeleteStr, this);
+    findButton = std::make_unique<QPushButton>(kFindStr, this);
+    resetButton = std::make_unique<QPushButton>(kResetStr, this);
 
     rightLayout->addWidget(keyEdit.get());
     rightLayout->addWidget(insertButton.get());
@@ -31,26 +40,26 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rightLayout->addWidget(resetButton.get());
 
     // Ползунок таймера
-    intervalSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    intervalSlider->setRange(1, 1000);
-    intervalSlider->setValue(500);
+    timerSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
+    timerSlider->setRange(kTimerRange.first, kTimerRange.second);
+    timerSlider->setValue(kStartTimer);
 
-    QLabel* intervalLabel = new QLabel("Time between frames:", this);
+    QLabel* timerLabel = new QLabel(kTimerComment, this);
 
-    QWidget* intervalWidget = new QWidget(this);
-    QVBoxLayout* intervalGroupLayout = new QVBoxLayout(intervalWidget);
-    intervalGroupLayout->setContentsMargins(0, 0, 0, 0);
-    intervalGroupLayout->addWidget(intervalLabel);
-    intervalGroupLayout->addWidget(intervalSlider.get());
-    intervalWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-    rightLayout->addWidget(intervalWidget);
+    QWidget* timerWidget = new QWidget(this);
+    QVBoxLayout* timerGroupLayout = new QVBoxLayout(timerWidget);
+    timerGroupLayout->setContentsMargins(0, 0, 0, 0);
+    timerGroupLayout->addWidget(timerLabel);
+    timerGroupLayout->addWidget(timerSlider.get());
+    timerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    rightLayout->addWidget(timerWidget);
 
     // Ползунок масштабирования
     scaleSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    scaleSlider->setRange(5, 30);
-    scaleSlider->setValue(10);
+    scaleSlider->setRange(kScaleRange.first, kScaleRange.second);
+    scaleSlider->setValue(kStartScale);
 
-    QLabel* scaleLabel = new QLabel("Picture scaling:", this);
+    QLabel* scaleLabel = new QLabel(kScaleComment, this);
 
     QWidget* scaleWidget = new QWidget(this);
     QVBoxLayout* scaleGroupLayout = new QVBoxLayout(scaleWidget);
@@ -61,13 +70,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rightLayout->addWidget(scaleWidget);
 
     // Окошко с сообщением
-    messageLabel = std::make_unique<QLabel>("Hello! Create your Red Black Tree!", this);
+    messageLabel = std::make_unique<QLabel>(kStartMessage, this);
     messageLabel->setWordWrap(true);
 
     QFrame* messageFrame = new QFrame(this);
     QVBoxLayout* frameLayout = new QVBoxLayout(messageFrame);
     frameLayout->addWidget(messageLabel.get());
-    frameLayout->setContentsMargins(8, 8, 8, 8);
+    frameLayout->setContentsMargins(kContentMargins, kContentMargins, kContentMargins,
+                                    kContentMargins);
 
     messageFrame->setFrameShape(QFrame::StyledPanel);
     messageFrame->setFrameShadow(QFrame::Raised);
@@ -76,10 +86,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rightLayout->addWidget(messageFrame);
 
     // Вся панель настроек
-    rightPanel->setFixedWidth(200);
+    rightPanel->setFixedWidth(kRightPanelWidth);
     mainLayout->addWidget(rightPanel);
 
-    resize(500, 400);
+    resize(kWindowShape.first, kWindowShape.second);
 }
 
 }  // namespace rbtree

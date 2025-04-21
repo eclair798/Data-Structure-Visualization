@@ -2,6 +2,8 @@
 
 namespace rbtree {
 
+const QString TreeView::kFontName = "Courier New";
+
 TreeView::TreeView(QWidget *parent) : QWidget(parent) {
 }
 
@@ -40,10 +42,10 @@ void TreeView::DrawNode(QPainter &painter, ConstIt nodeIt) {
     DrawEdge(painter, nodeIt, nodeIt->left);
     DrawEdge(painter, nodeIt, nodeIt->right);
 
-    QPointF centre = makeQPoint(nodeIt->centre);
+    QPointF centre = MakeQPoint(nodeIt->centre);
     QScalar halfWidth(nodeIt->halfWidth);
-    QColor color = makeQColor(nodeIt->color);
-    QString text = makeQString(nodeIt->key);
+    QColor color = MakeQColor(nodeIt->color);
+    QString text = MakeQString(nodeIt->key);
     QRectF rect;
     if (nodeIt->shape == GTree::NodeShape::Circle) {
         rect = CircleToRect(centre, halfWidth);
@@ -66,16 +68,16 @@ void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo)
     painter.drawLine(from, to);
 }
 
-QColor TreeView::makeQColor(GTree::Color color) {
+QColor TreeView::MakeQColor(GTree::Color color) {
     switch (color) {
         case GTree::Color::Red:
-            return customDarkRed;
+            return kCustomDarkRed;
         case GTree::Color::Black:
-            return customBlack;
+            return kCustomBlack;
         case GTree::Color::Gray:
-            return customLighterBlack;
+            return kCustomLighterBlack;
         case GTree::Color::LightRed:
-            return customLighterDarkRed;
+            return kCustomLighterDarkRed;
         case GTree::Color::Green:
             return Qt::darkGreen;
         default:
@@ -83,11 +85,11 @@ QColor TreeView::makeQColor(GTree::Color color) {
     }
 }
 
-QPointF TreeView::makeQPoint(GTree::Point point) {
+QPointF TreeView::MakeQPoint(GTree::Point point) {
     return QPointF(point.x, point.y);
 }
 
-QString TreeView::makeQString(GTree::Text text) {
+QString TreeView::MakeQString(GTree::Text text) {
     return QString::fromStdString(text);
 }
 
@@ -103,7 +105,7 @@ QRectF TreeView::GetRect(QPointF centre, QScalar halfWidth) {
 
 void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QString &text,
                                         const QColor &fillColor, GTree::NodeShape shape) {
-    QFont font(fontName, fontSize);
+    QFont font(kFontName, kFontSize);
 
     painter.setBrush(fillColor);
     painter.setPen(Qt::black);
@@ -114,14 +116,14 @@ void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QS
         painter.drawRect(rect);
     }
 
-    int size = fontSize;
+    int size = kFontSize;
     while (size > 1) {
         font.setPointSize(size);
         painter.setFont(font);
         QFontMetricsF fm(font);
         QRectF textRect = fm.boundingRect(text);
-        if (rect.width() - textRect.width() > textIndent &&
-            rect.height() - textRect.height() > textIndent) {
+        if (rect.width() - textRect.width() > kTextIndent &&
+            rect.height() - textRect.height() > kTextIndent) {
             std::cout << textRect.width();
             std::cout << rect.width();
 

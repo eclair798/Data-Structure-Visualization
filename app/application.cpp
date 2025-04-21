@@ -11,12 +11,12 @@ Application::Application(int argc, char* argv[]) {
     tree_ = std::make_unique<RBTreeINT>();
     geomModel_ = std::make_unique<GeomModel>(tree_.get());
 
-    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->intervalSlider->value(),
+    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->timerSlider->value(),
                                            window_.get());  // внутри заводится таймер
 
     treeController_ =
         std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
-    timerController_ = std::make_unique<TimerController>(animator_->timer_.get(), window_.get());
+    timerController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
 
     SetupConnections();
 }
@@ -26,7 +26,7 @@ void Application::SetupConnections() {
     // или connect(sender, &SenderType::signalName, [](){} );
 
     // connect Аниматора с вьюхой
-    QObject::connect(animator_.get(), &Animator::frameReady,
+    QObject::connect(animator_.get(), &Animator::FrameReady,
                      [this]() { window_->treeView->ShowFrame(animator_->PopFrame()); });
 
     // connect Кнопок с контроллером
@@ -40,7 +40,7 @@ void Application::SetupConnections() {
                      &TreeController::HandleReset);
 
     // connect Ползунка таймера с контроллером
-    QObject::connect(window_->intervalSlider.get(), &QSlider::valueChanged, timerController_.get(),
+    QObject::connect(window_->timerSlider.get(), &QSlider::valueChanged, timerController_.get(),
                      &TimerController::HandleTimerChange);
 
     // connect Ползунка масштабирования с вьюхой

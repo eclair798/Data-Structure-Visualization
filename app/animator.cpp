@@ -2,29 +2,29 @@
 
 namespace rbtree {
 
-void Animator::onTimeout() {
+void Animator::OnTimeout() {
     if (!frames_.empty()) {
-        emit frameReady();
+        emit FrameReady();
     }
 }
 
 Animator::Animator(GeomModel* gModel, int startTimerInterval, QObject* parent)
-    : observer_([this](GTreeConstPtr frame) { this->enqueueFrame(frame); }), QObject(parent) {
-    gModel->SubscribeFrame(&observer_);
+    : gteeObserver_([this](GTreeConstPtr frame) { this->EnqueueFrame(frame); }), QObject(parent) {
+    gModel->SubscribeFrame(&gteeObserver_);
 
-    enqueueFrame(gModel->GetCurrentFrame());
+    EnqueueFrame(gModel->GetCurrentFrame());
 
-    timer_ = std::make_unique<QTimer>(this);
+    timer = std::make_unique<QTimer>(this);
 
-    connect(timer_.get(), &QTimer::timeout, this, &Animator::onTimeout);
+    connect(timer.get(), &QTimer::timeout, this, &Animator::OnTimeout);
 
-    timer_->setSingleShot(false);
+    timer->setSingleShot(false);
     std::chrono::milliseconds msc(startTimerInterval);
-    timer_->setInterval(msc);
-    timer_->start();
+    timer->setInterval(msc);
+    timer->start();
 }
 
-void Animator::enqueueFrame(GTreeConstPtr frame) {
+void Animator::EnqueueFrame(GTreeConstPtr frame) {
     frames_.push(frame);
 }
 

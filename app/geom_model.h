@@ -34,7 +34,7 @@ private:
 
 private:
     GTreeConstPtr tree_;
-    TreeObserver observer_;
+    TreeObserver teeObserver_;
 
     GTreeObservable observable_{[this]() -> GTreeConstPtr {
         return GetCurrentFrame();

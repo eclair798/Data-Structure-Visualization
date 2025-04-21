@@ -21,20 +21,20 @@ public:
     GTreeConstPtr PopFrame();
 
 signals:
-    void frameReady();
+    void FrameReady();
 
 private slots:
 
-    void onTimeout();
+    void OnTimeout();
 
 private:
-    void enqueueFrame(GTreeConstPtr frame);
+    void EnqueueFrame(GTreeConstPtr frame);
 
 public:
-    GTreeObserver observer_;
-    std::unique_ptr<QTimer> timer_;
+    std::unique_ptr<QTimer> timer;
 
 private:
+    GTreeObserver gteeObserver_;
     std::queue<GTreeConstPtr> frames_;
 };
 

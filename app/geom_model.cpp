@@ -3,8 +3,8 @@
 namespace rbtree {
 
 GeomModel::GeomModel(RBTreeINT* tree)
-    : observer_([this](const RBTreeINT& changedTree) { this->UpdateFrom(changedTree); }) {
-    tree->SubscribeStep(&observer_);
+    : teeObserver_([this](const RBTreeINT& changedTree) { this->UpdateFrom(changedTree); }) {
+    tree->SubscribeStep(&teeObserver_);
     tree_ = std::make_shared<const GTree>(*tree);
 }
 

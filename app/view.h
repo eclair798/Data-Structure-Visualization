@@ -30,9 +30,9 @@ private:
     void DrawEdge(QPainter& painter, ConstIt nodeItFrom, ConstIt nodeItTo);
 
 private:
-    QColor makeQColor(GTree::Color color);
-    QPointF makeQPoint(GTree::Point point);
-    QString makeQString(GTree::Text text);
+    QColor MakeQColor(GTree::Color color);
+    QPointF MakeQPoint(GTree::Point point);
+    QString MakeQString(GTree::Text text);
 
     QRectF CircleToRect(QPointF centre, QScalar radius);
     QRectF GetRect(QPointF centre, QScalar halfWidth);
@@ -47,15 +47,17 @@ public:
 private:
     GTreeConstPtr currentFrame_;
 
-    static constexpr const QColor customBlack{0, 0, 0};
-    static constexpr const QColor customLighterBlack{70, 70, 70};
+    static constexpr const QColor kCustomBlack{0, 0, 0};
+    static constexpr const QColor kCustomLighterBlack{100, 100, 100};
 
-    static constexpr const QColor customDarkRed{140, 0, 0};
-    static constexpr const QColor customLighterDarkRed{200, 0, 0};
+    static constexpr const QColor kCustomDarkRed{140, 0, 0};
+    static constexpr const QColor kCustomLighterDarkRed{230, 0, 0};
 
-    static constexpr const int fontSize = 14;
-    const QString fontName = "Courier New";
-    static constexpr const QScalar textIndent = 1.;
+    static constexpr const QScalar kTextIndent = 2.;
+
+    static const QString kFontName;
+
+    static constexpr const int kFontSize = 18;
 };
 
 }  // namespace rbtree
