@@ -11,6 +11,8 @@
 #include <QMessageBox>
 
 #include "geom_model.h"
+#include "view.h"
+#include "exporter.h"
 
 namespace rbtree {
 
@@ -25,6 +27,7 @@ public slots:
     void HandleDelete();
     void HandleFind();
     void HandleReset();
+    void HandleStatusReset();
 
 signals:
     void NewMessage(const QString& message);
@@ -46,6 +49,25 @@ public slots:
 
 private:
     QTimer* timer_;
+};
+
+class ViewController : public QObject {
+    Q_OBJECT
+
+public:
+    ViewController(TreeView* view, QLineEdit* keyEdit, QObject* parent = nullptr);
+
+public slots:
+    void HandleScaleChange(int scale, float scaleOfScale);
+    void HandleViewSave();
+
+signals:
+    void NewMessage(const QString& message);
+    void NewError(const QString& message);
+
+private:
+    TreeView* view_;
+    QLineEdit* keyEdit_;
 };
 
 }  // namespace rbtree

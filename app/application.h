@@ -7,6 +7,7 @@
 #include "animator.h"
 #include "controllers.h"
 #include "main_window.h"
+#include "exporter.h"
 
 namespace rbtree {
 
@@ -27,7 +28,8 @@ private:
     std::unique_ptr<Animator> animator_;
 
     std::unique_ptr<TreeController> treeController_;
-    std::unique_ptr<TimerController> rateController_;
+    std::unique_ptr<TimerController> timerController_;
+    std::unique_ptr<ViewController> viewController_;
 
     void SetupConnections();
 };

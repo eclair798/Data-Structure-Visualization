@@ -59,8 +59,7 @@ public:
 
     // Вставка нового ключа
     bool Insert(const KeyType& key) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         if (Search(key)) {
             return false;  // Ключ уже в дереве
@@ -73,8 +72,7 @@ public:
             newNode->color = NodeColor::Black;
             root_ = std::move(newNode);
 
-            StatusReset();
-            NotifyStep();
+            StatusResetWithNotify();
             return true;
         }
         newNode->color = NodeColor::Red;
@@ -108,8 +106,7 @@ public:
         // fixup
         InsertFixup(rawNew);
 
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
         return true;
     }
 
@@ -124,8 +121,7 @@ public:
     * 3) Если удалённая (или перемещённая) вершина была чёрной, делаем fixup.
     */
     bool Delete(const KeyType& key) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         Node* z = SearchNode(key);
         if (!z) {
@@ -202,8 +198,7 @@ public:
         NotifyStep();
 
         if (yOriginalColor == NodeColor::Red) {
-            StatusReset();
-            NotifyStep();
+            StatusResetWithNotify();
             return true;
         }
         if (x) {
@@ -214,8 +209,8 @@ public:
             x->color = NodeColor::Black;
 
             NotifyStep();
-            StatusReset();
-            NotifyStep();
+
+            StatusResetWithNotify();
             return true;
         }
 
@@ -224,8 +219,7 @@ public:
             DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
         }
 
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
         return true;
     }
 
@@ -252,6 +246,11 @@ public:
         if (now->right) {
             StatusReset(now->right.get());
         }
+    }
+
+    void StatusResetWithNotify() {
+        StatusReset();
+        NotifyStep();
     }
 
     template<typename KT>
@@ -287,8 +286,7 @@ private:
     *       B   C       A   B
     */
     void RotateLeft(Node* x) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         if (!x || !x->right) {
             return;
@@ -344,8 +342,7 @@ private:
     *     B   C           C   A
     */
     void RotateRight(Node* x) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         if (!x || !x->left) {
             return;
@@ -396,8 +393,7 @@ private:
     * Если дядя красный - просто перекрашиваем, иначе делаем повороты.
     */
     void InsertFixup(Node* x) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         // Пока есть родитель и он красный - нарушение свойства 3
         while (x != root_.get() && x->parent->color == NodeColor::Red) {
@@ -485,8 +481,7 @@ private:
     * Идём вверх до корня, пока не снимем двойную чёрность.
     */
     void DeleteFixup(Node* parent) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         Node* x = nullptr;
         while (x != root_.get() && (!x || x->color == NodeColor::Black)) {
@@ -611,8 +606,7 @@ private:
 
     // Просто ищет ноду с ключом. Если такого нет, то просто nullptr
     Node* SearchNode(const KeyType& key) {
-        StatusReset();
-        NotifyStep();
+        StatusResetWithNotify();
 
         Node* current = root_.get();
         while (current != nullptr) {

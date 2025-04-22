@@ -233,11 +233,11 @@ private:
     GeomNodePtr root_;
 
 public:
-    static constexpr const Scalar kHeightOfLevel = 40.;
-    static constexpr const Scalar kMinDistBetweenNodes = 0.;
-    static constexpr const Scalar kHalfWidthOfNodeView = 15.;
+    static constexpr const Scalar kHeightOfLevel = 60.;
+    static constexpr const Scalar kMinDistBetweenNodes = -20.;
+    static constexpr const Scalar kHalfWidthOfNodeView = 25.;
     static constexpr const Point kRootCoordinates = {0, 0};
-    static constexpr const Scalar kIndent = 30.;
+    static constexpr const Scalar kIndent = 50.;
 };
 
 }  // namespace rbtree

@@ -17,7 +17,9 @@ Application::Application(int argc, char* argv[]) {
 
     treeController_ =
         std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
-    rateController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
+    timerController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
+    viewController_ = std::make_unique<ViewController>(window_->treeView.get(),
+                                                       window_->keyEdit.get(), window_.get());
 
     SetupConnections();
 }
@@ -39,10 +41,15 @@ void Application::SetupConnections() {
                      &TreeController::HandleFind);
     QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
                      &TreeController::HandleReset);
+    QObject::connect(window_->statusResetButton.get(), &QPushButton::clicked, treeController_.get(),
+                     &TreeController::HandleStatusReset);
+
+    QObject::connect(window_->viewSaveButton.get(), &QPushButton::clicked, viewController_.get(),
+                     &ViewController::HandleViewSave);
 
     // connect Ползунка скорости с контроллером
     QObject::connect(window_->rateSlider.get(), &QSlider::valueChanged, [this](int rate) {
-        rateController_->HandleRateChange(rate, window_->kRateRange.second);
+        timerController_->HandleRateChange(rate, window_->kRateRange.second);
     });
 
     // connect Ползунка масштабирования с вьюхой
@@ -57,8 +64,20 @@ void Application::SetupConnections() {
                          window_->messageLabel->setText(message);
                      });
 
+    QObject::connect(viewController_.get(), &ViewController::NewMessage,
+                     [this](const QString& message) {
+                         window_->messageLabel->setStyleSheet("");
+                         window_->messageLabel->setText(message);
+                     });
+
     // connect Контроллера с сообщением об ошибке
     QObject::connect(treeController_.get(), &TreeController::NewError,
+                     [this](const QString& error) {
+                         window_->messageLabel->setStyleSheet("color: red;");
+                         window_->messageLabel->setText(error);
+                     });
+
+    QObject::connect(viewController_.get(), &ViewController::NewError,
                      [this](const QString& error) {
                          window_->messageLabel->setStyleSheet("color: red;");
                          window_->messageLabel->setText(error);

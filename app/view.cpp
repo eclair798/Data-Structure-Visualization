@@ -17,12 +17,17 @@ void TreeView::HandleScaleChange(int scale, float scaleOfScale) {
     UpdatePicture();
 }
 
+QSize TreeView::TreeSize() const {
+    return curTreeSize;
+}
+
 void TreeView::UpdatePicture() {
-    auto w = currentFrame_->Width();
-    auto h = currentFrame_->Height();
-    setMinimumWidth(w * scaler);
-    setMinimumHeight(h * scaler);
+    auto w = currentFrame_->Width() * scaler;
+    auto h = currentFrame_->Height() * scaler;
+    setMinimumWidth(w);
+    setMinimumHeight(h);
     update();
+    curTreeSize = QSize{CeilScalar(w), CeilScalar(h)};
 }
 
 void TreeView::paintEvent(QPaintEvent *) {
@@ -30,7 +35,9 @@ void TreeView::paintEvent(QPaintEvent *) {
         return;
     }
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
     DrawTree(painter);
 }
 
@@ -76,7 +83,11 @@ void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo)
     painter.drawLine(from, to);
 }
 
-QColor TreeView::MakeQColor(GTree::Color color) {
+int TreeView::CeilScalar(Scalar val) {
+    return static_cast<int>(std::ceil(val));
+}
+
+QColor TreeView::MakeQColor(Color color) {
     switch (color) {
         case GTree::Color::Red:
             return kCustomDarkRed;
@@ -93,11 +104,11 @@ QColor TreeView::MakeQColor(GTree::Color color) {
     }
 }
 
-QPointF TreeView::MakeQPoint(GTree::Point point) {
+QPointF TreeView::MakeQPoint(Point point) {
     return QPointF(point.x, point.y);
 }
 
-QString TreeView::MakeQString(GTree::Text text) {
+QString TreeView::MakeQString(Text text) {
     return QString::fromStdString(text);
 }
 

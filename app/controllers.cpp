@@ -66,12 +66,39 @@ void TreeController::HandleReset() {
     emit NewMessage(QString::fromStdString(msg));
 }
 
+void TreeController::HandleStatusReset() {
+    tree_->StatusResetWithNotify();
+    std::string msg = "Node statuses was reset successfully.";
+    emit NewMessage(QString::fromStdString(msg));
+}
+
 TimerController::TimerController(QTimer* timer, QObject* parent) : timer_(timer), QObject(parent) {
 }
 
 void TimerController::HandleRateChange(int rate, int maxRate) {
     std::chrono::milliseconds msc(maxRate - rate);
     timer_->setInterval(msc);
+}
+
+ViewController::ViewController(TreeView* view, QLineEdit* keyEdit, QObject* parent)
+    : view_(view), keyEdit_(keyEdit), QObject(parent) {
+}
+
+void ViewController::HandleScaleChange(int scale, float scaleOfScale) {
+    view_->HandleScaleChange(scale, scaleOfScale);
+}
+
+void ViewController::HandleViewSave() {
+    auto fileName = keyEdit_->text().toStdString();
+    bool ok = TreeExporter::SaveToPng(view_, fileName);
+    if (ok) {
+        std::string msg = "Picture was saved to Donwloads successfully.";
+        emit NewMessage(QString::fromStdString(msg));
+    } else {
+        std::string msg = "Something goes wrong. Picture was not saved.";
+        emit NewError(QString::fromStdString(msg));
+    }
+    keyEdit_->clear();
 }
 
 }  // namespace rbtree

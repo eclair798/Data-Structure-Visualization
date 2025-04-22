@@ -6,10 +6,14 @@ const QString MainWindow::kInsertStr = "Insert";
 const QString MainWindow::kDeleteStr = "Delete";
 const QString MainWindow::kFindStr = "Find";
 const QString MainWindow::kResetStr = "Reset";
+const QString MainWindow::kStatusResetStr = "Reset Statuses";
+const QString MainWindow::kViewSaveStr = "Save in PNG";
 
 const QString MainWindow::kRateComment = "Frame rate:";
 const QString MainWindow::kScaleComment = "Picture scaling:";
-const QString MainWindow::kStartMessage = "Hello! Create your Red Black Tree!";
+const QString MainWindow::kStartMessage =
+    "Hello! Create your Red Black Tree!\nIf you want to save picture: enter the name of "
+    "the picture and push Save Button";
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QWidget* centralWidget = new QWidget(this);
@@ -36,12 +40,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     deleteButton = std::make_unique<QPushButton>(kDeleteStr, this);
     findButton = std::make_unique<QPushButton>(kFindStr, this);
     resetButton = std::make_unique<QPushButton>(kResetStr, this);
+    statusResetButton = std::make_unique<QPushButton>(kStatusResetStr, this);
+    viewSaveButton = std::make_unique<QPushButton>(kViewSaveStr, this);
 
     rightLayout->addWidget(keyEdit.get());
     rightLayout->addWidget(insertButton.get());
     rightLayout->addWidget(deleteButton.get());
     rightLayout->addWidget(findButton.get());
     rightLayout->addWidget(resetButton.get());
+    rightLayout->addWidget(statusResetButton.get());
+    rightLayout->addWidget(viewSaveButton.get());
 
     // Ползунок таймера
     rateSlider = std::make_unique<QSlider>(Qt::Horizontal, this);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include <QWidget>
 #include <QPainter>
 #include <QPaintEvent>
@@ -13,13 +15,21 @@ class TreeView : public QWidget {
 public:
     using QScalar = qreal;
 
+    using Scalar = GTree::Scalar;
+    using Color = GTree::Color;
+    using Point = GTree::Point;
+    using Text = GTree::Text;
+
     using ConstIt = GTree::ConstIt;
+
     TreeView(QWidget* parent = nullptr);
 
     void ShowFrame(GTreeConstPtr frame);
 
-public slots:
+public:
     void HandleScaleChange(int scale, float scaleOfScale);
+
+    QSize TreeSize() const;
 
 protected:
     void paintEvent(QPaintEvent*) override;
@@ -31,11 +41,14 @@ private:
     void DrawNode(QPainter& painter, ConstIt nodeIt);
     void DrawEdge(QPainter& painter, ConstIt nodeItFrom, ConstIt nodeItTo);
 
-private:
-    QColor MakeQColor(GTree::Color color);
-    QPointF MakeQPoint(GTree::Point point);
-    QString MakeQString(GTree::Text text);
+public:
+    int CeilScalar(Scalar val);
 
+    static QColor MakeQColor(Color color);
+    static QPointF MakeQPoint(Point point);
+    static QString MakeQString(Text text);
+
+private:
     QRectF CircleToRect(QPointF centre, QScalar radius);
     QRectF GetRect(QPointF centre, QScalar halfWidth);
 
@@ -45,6 +58,8 @@ private:
 
 public:
     QScalar scaler = 1;
+
+    QSize curTreeSize{0, 0};
 
 private:
     GTreeConstPtr currentFrame_;
@@ -59,7 +74,7 @@ private:
 
     static const QString kFontName;
 
-    static constexpr const int kFontSize = 18;
+    static constexpr const int kFontSize = 25;
 };
 
 }  // namespace rbtree
