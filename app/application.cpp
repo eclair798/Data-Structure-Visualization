@@ -6,6 +6,7 @@ Application::Application(int argc, char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
 
     qApp_ = std::make_unique<QApplication>(argc, argv);
+
     window_ = std::make_unique<MainWindow>();  // создается вьюха
 
     tree_ = std::make_unique<RBTreeINT>();
@@ -17,9 +18,10 @@ Application::Application(int argc, char* argv[]) {
 
     treeController_ =
         std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
-    timerController_ = std::make_unique<TimerController>(animator_->timer.get(), window_.get());
+    timerController_ = std::make_unique<TimerController>(animator_->timer.get(),
+                                                         window_->pauseButton.get(), window_.get());
     viewController_ = std::make_unique<ViewController>(window_->treeView.get(),
-                                                       window_->keyEdit.get(), window_.get());
+                                                       window_->fileNameEdit.get(), window_.get());
 
     SetupConnections();
 }
@@ -51,6 +53,9 @@ void Application::SetupConnections() {
     QObject::connect(window_->rateSlider.get(), &QSlider::valueChanged, [this](int rate) {
         timerController_->HandleRateChange(rate, window_->kRateRange.second);
     });
+
+    QObject::connect(window_->pauseButton.get(), &QPushButton::toggled,
+                     [this](bool push) { timerController_->HandlePause(push); });
 
     // connect Ползунка масштабирования с вьюхой
     QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, [this](int scale) {

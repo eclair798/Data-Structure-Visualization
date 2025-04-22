@@ -72,7 +72,8 @@ void TreeController::HandleStatusReset() {
     emit NewMessage(QString::fromStdString(msg));
 }
 
-TimerController::TimerController(QTimer* timer, QObject* parent) : timer_(timer), QObject(parent) {
+TimerController::TimerController(QTimer* timer, QPushButton* pauseButton, QObject* parent)
+    : timer_(timer), pauseButton_(pauseButton), QObject(parent) {
 }
 
 void TimerController::HandleRateChange(int rate, int maxRate) {
@@ -80,8 +81,18 @@ void TimerController::HandleRateChange(int rate, int maxRate) {
     timer_->setInterval(msc);
 }
 
-ViewController::ViewController(TreeView* view, QLineEdit* keyEdit, QObject* parent)
-    : view_(view), keyEdit_(keyEdit), QObject(parent) {
+void TimerController::HandlePause(bool push) {
+    if (push) {
+        timer_->stop();
+        pauseButton_->setText("Resume");
+    } else {
+        timer_->start();
+        pauseButton_->setText("Pause");
+    }
+}
+
+ViewController::ViewController(TreeView* view, QLineEdit* fileNameEdit, QObject* parent)
+    : view_(view), fileNameEdit_(fileNameEdit), QObject(parent) {
 }
 
 void ViewController::HandleScaleChange(int scale, float scaleOfScale) {
@@ -89,7 +100,7 @@ void ViewController::HandleScaleChange(int scale, float scaleOfScale) {
 }
 
 void ViewController::HandleViewSave() {
-    auto fileName = keyEdit_->text().toStdString();
+    auto fileName = fileNameEdit_->text().toStdString();
     bool ok = TreeExporter::SaveToPng(view_, fileName);
     if (ok) {
         std::string msg = "Picture was saved to Donwloads successfully.";
@@ -98,7 +109,7 @@ void ViewController::HandleViewSave() {
         std::string msg = "Something goes wrong. Picture was not saved.";
         emit NewError(QString::fromStdString(msg));
     }
-    keyEdit_->clear();
+    // fileNameEdit_->clear();
 }
 
 }  // namespace rbtree

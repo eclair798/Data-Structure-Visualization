@@ -304,7 +304,7 @@ private:
         if (y->right) {
             y->right->status = NodeStatus::Intermediate;
         }
-        NotifyStepTwice();
+        NotifyStep();
 
         NodePtr oldY = std::move(x->right);  // "упаковали" y во временный unique_ptr
         y->parent = nullptr;
@@ -330,7 +330,7 @@ private:
         y->left = std::move(oldX);
         y->left->parent = y;
 
-        NotifyStepTwice();
+        NotifyStep();
         StatusReset();
     }
 
@@ -360,7 +360,7 @@ private:
         if (y->right) {
             y->right->status = NodeStatus::Intermediate;
         }
-        NotifyStepTwice();
+        NotifyStep();
 
         NodePtr oldY = std::move(x->left);
         y->parent = nullptr;
@@ -383,7 +383,7 @@ private:
         y->right = std::move(oldX);
         y->right->parent = y;
 
-        NotifyStepTwice();
+        NotifyStep();
         StatusReset();
     }
 

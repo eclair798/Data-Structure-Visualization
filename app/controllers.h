@@ -7,6 +7,7 @@
 #include <QLineEdit>
 #include <QSlider>
 #include <QString>
+#include <QPushButton>
 
 #include <QMessageBox>
 
@@ -42,20 +43,22 @@ class TimerController : public QObject {
     Q_OBJECT
 
 public:
-    TimerController(QTimer* timer, QObject* parent = nullptr);
+    TimerController(QTimer* timer, QPushButton* pauseButton, QObject* parent = nullptr);
 
 public slots:
     void HandleRateChange(int rate, int maxRate);
+    void HandlePause(bool push);
 
 private:
     QTimer* timer_;
+    QPushButton* pauseButton_;
 };
 
 class ViewController : public QObject {
     Q_OBJECT
 
 public:
-    ViewController(TreeView* view, QLineEdit* keyEdit, QObject* parent = nullptr);
+    ViewController(TreeView* view, QLineEdit* fileNameEdit, QObject* parent = nullptr);
 
 public slots:
     void HandleScaleChange(int scale, float scaleOfScale);
@@ -67,7 +70,7 @@ signals:
 
 private:
     TreeView* view_;
-    QLineEdit* keyEdit_;
+    QLineEdit* fileNameEdit_;
 };
 
 }  // namespace rbtree

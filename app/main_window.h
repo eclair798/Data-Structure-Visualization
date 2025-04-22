@@ -31,20 +31,28 @@ public:
     std::unique_ptr<QPushButton> findButton;
     std::unique_ptr<QPushButton> resetButton;
     std::unique_ptr<QPushButton> statusResetButton;
-    std::unique_ptr<QPushButton> viewSaveButton;
 
     std::unique_ptr<QSlider> rateSlider;
+
+    std::unique_ptr<QPushButton> pauseButton;
+
     std::unique_ptr<QSlider> scaleSlider;
 
     std::unique_ptr<QLabel> messageLabel;
 
+    std::unique_ptr<QLineEdit> fileNameEdit;
+    std::unique_ptr<QPushButton> viewSaveButton;
+
 public:
+    static const QString kStartStyleSheet;
+
     static const QString kInsertStr;
     static const QString kDeleteStr;
     static const QString kFindStr;
     static const QString kResetStr;
     static const QString kStatusResetStr;
     static const QString kViewSaveStr;
+    static const QString kPauseStr;
 
     static const QString kRateComment;
     static constexpr const std::pair<int, int> kRateRange = {0, 1500};
@@ -55,8 +63,9 @@ public:
     static constexpr const int kStartScale = 100;
     static constexpr const float kScaleRangeScale = 100;
 
+    static constexpr const std::pair<int, int> kHalvesProportion = {1, 0};
     static constexpr const int kRightPanelWidth = 200;
-    static constexpr const std::pair<int, int> kWindowShape = {1000, 600};
+    static constexpr const std::pair<int, int> kWindowShape = {1000, 650};
 
     static const QString kStartMessage;
 
