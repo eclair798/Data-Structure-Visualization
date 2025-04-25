@@ -11,8 +11,6 @@
 
 #include <QMessageBox>
 
-#include "geom_model.h"
-#include "view.h"
 #include "exporter.h"
 
 namespace rbtree {

@@ -143,9 +143,6 @@ void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QS
         QRectF textRect = fm.boundingRect(text);
         if (rect.width() - textRect.width() > kTextIndent &&
             rect.height() - textRect.height() > kTextIndent) {
-            std::cout << textRect.width();
-            std::cout << rect.width();
-
             break;
         }
         --size;

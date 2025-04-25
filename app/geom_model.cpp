@@ -17,4 +17,12 @@ GTreeConstPtr GeomModel::GetCurrentFrame() const {
     return tree_;
 }
 
+void GeomModel::SubscribeFrame(GTreeObserver* observerPtr) {
+    gtreeObservable_.subscribe(observerPtr);
+}
+
+void GeomModel::NotifyFrame() {
+    gtreeObservable_.notify();
+}
+
 }  // namespace rbtree

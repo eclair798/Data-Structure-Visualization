@@ -57,9 +57,9 @@ void Application::SetupConnections() {
     QObject::connect(window_->pauseButton.get(), &QPushButton::toggled,
                      [this](bool push) { timerController_->HandlePause(push); });
 
-    // connect Ползунка масштабирования с вьюхой
+    // connect Ползунка масштабирования с контроллером
     QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, [this](int scale) {
-        window_->treeView->HandleScaleChange(scale, window_->kScaleRangeScale);
+        viewController_->HandleScaleChange(scale, window_->kScaleRangeScale);
     });
 
     // connect Контроллера с сообщением для пользователя

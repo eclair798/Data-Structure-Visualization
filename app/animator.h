@@ -24,7 +24,6 @@ signals:
     void FrameReady();
 
 private slots:
-
     void OnTimeout();
 
 private:

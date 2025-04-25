@@ -7,6 +7,9 @@ TreeController::TreeController(RBTreeINT* tree, QLineEdit* keyEdit, QObject* par
 }
 
 void TreeController::HandleInsert() {
+    if (keyEdit_->text().isEmpty()) {
+        return;
+    }
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
@@ -15,16 +18,19 @@ void TreeController::HandleInsert() {
         return;
     }
     if (tree_->Insert(key)) {
-        std::string msg = std::format("Key {} inserted successfully.", key);
+        std::string msg = std::format("Key {} was inserted successfully.", key);
         emit NewMessage(QString::fromStdString(msg));
     } else {
-        std::string msg = std::format("Key {} already exist.", key);
+        std::string msg = std::format("Key {} already exists.", key);
         emit NewMessage(QString::fromStdString(msg));
     }
     keyEdit_->clear();
 }
 
 void TreeController::HandleDelete() {
+    if (keyEdit_->text().isEmpty()) {
+        return;
+    }
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
@@ -33,7 +39,7 @@ void TreeController::HandleDelete() {
         return;
     }
     if (tree_->Delete(key)) {
-        std::string msg = std::format("Key {} deleted successfully.", key);
+        std::string msg = std::format("Key {} was deleted successfully.", key);
         emit NewMessage(QString::fromStdString(msg));
     } else {
         std::string msg = std::format("Key {} does not exist.", key);
@@ -43,6 +49,9 @@ void TreeController::HandleDelete() {
 }
 
 void TreeController::HandleFind() {
+    if (keyEdit_->text().isEmpty()) {
+        return;
+    }
     bool ok;
     int key = keyEdit_->text().toInt(&ok);
     if (!ok) {
@@ -51,10 +60,10 @@ void TreeController::HandleFind() {
         return;
     }
     if (tree_->Search(key)) {
-        std::string msg = std::format("Key {} found.", key);
+        std::string msg = std::format("Key {} was found in the tree.", key);
         emit NewMessage(QString::fromStdString(msg));
     } else {
-        std::string msg = std::format("Key {} not found.", key);
+        std::string msg = std::format("Key {} has not found", key);
         emit NewMessage(QString::fromStdString(msg));
     }
     keyEdit_->clear();
@@ -103,13 +112,12 @@ void ViewController::HandleViewSave() {
     auto fileName = fileNameEdit_->text().toStdString();
     bool ok = TreeExporter::SaveToPng(view_, fileName);
     if (ok) {
-        std::string msg = "Picture was saved to Donwloads successfully.";
+        std::string msg = "Picture successfully saved to Downloads folder.";
         emit NewMessage(QString::fromStdString(msg));
     } else {
-        std::string msg = "Something goes wrong. Picture was not saved.";
+        std::string msg = "An error occurred. Picture was not saved.";
         emit NewError(QString::fromStdString(msg));
     }
-    // fileNameEdit_->clear();
 }
 
 }  // namespace rbtree

@@ -11,7 +11,6 @@
 #include <QImage>
 #include <QPainter>
 
-#include "geom_tree.h"
 #include "view.h"
 
 namespace rbtree {

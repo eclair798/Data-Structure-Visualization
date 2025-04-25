@@ -132,6 +132,7 @@ public:
         Node* y = z;
         NodeColor yOriginalColor = y->color;
         Node* yOriginalParent = y->parent;
+        KeyType yOriginalKey;
 
         // x - единственный сын y который поднимем на его место
         Node* x = nullptr;
@@ -163,6 +164,7 @@ public:
             y = Minimum(z->right.get());
             yOriginalColor = y->color;
             yOriginalParent = y->parent;
+            yOriginalKey = y->key;
 
             x = y->right.get();
 
@@ -178,21 +180,8 @@ public:
             NotifyStep();
 
             // поднимаем y на место z
-            NodePtr& zRef = ParentRef(z);
-
-            y->right = std::move(z->right);
-            if (y->right) {
-                y->right->parent = y;
-            }
-            y->left = std::move(z->left);
-            if (y->left) {
-                y->left->parent = y;
-            }
-            y->parent = z->parent;
-            y->color = z->color;
-
-            NodePtr oldZ = std::move(zRef);
-            zRef = std::move(tmpHolder);
+            z->key = yOriginalKey;
+            tmpHolder.reset();
         }
 
         NotifyStep();
@@ -331,7 +320,7 @@ private:
         y->left->parent = y;
 
         NotifyStep();
-        StatusReset();
+        StatusResetWithNotify();
     }
 
     /*
@@ -384,7 +373,7 @@ private:
         y->right->parent = y;
 
         NotifyStep();
-        StatusReset();
+        StatusResetWithNotify();
     }
 
     /*
@@ -658,12 +647,12 @@ private:
 
 public:
     void SubscribeStep(TreeObserver* observerPtr) {
-        observable_.subscribe(observerPtr);
+        treeObservable_.subscribe(observerPtr);
     }
 
 private:
-    void NotifyStep() {  // todo: проставить NotifyStep в местах изменения дерева
-        observable_.notify();
+    void NotifyStep() {
+        treeObservable_.notify();
     }
 
     void NotifyStepTwice() {
@@ -674,7 +663,7 @@ private:
 private:
     NodePtr root_ = nullptr;
 
-    TreeObservable observable_{[this]() -> const RBTree& {
+    TreeObservable treeObservable_{[this]() -> const RBTree& {
         return *this;
     }};
 };

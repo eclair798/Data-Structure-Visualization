@@ -23,20 +23,16 @@ public:
     GTreeConstPtr GetCurrentFrame() const;
 
 public:
-    void SubscribeFrame(GTreeObserver* observerPtr) {
-        observable_.subscribe(observerPtr);
-    }
+    void SubscribeFrame(GTreeObserver* observerPtr);
 
 private:
-    void NotifyFrame() {
-        observable_.notify();
-    }
+    void NotifyFrame();
 
 private:
     GTreeConstPtr tree_;
     TreeObserver teeObserver_;
 
-    GTreeObservable observable_{[this]() -> GTreeConstPtr {
+    GTreeObservable gtreeObservable_{[this]() -> GTreeConstPtr {
         return GetCurrentFrame();
     }};
 };

@@ -50,7 +50,6 @@ public:
     using RBTreeKT = RBTree<KeyType>;
     using NumOfLevel = int;
 
-    // todo доделать если буду менять статусы
     static Color GetNodeColor(typename RBTreeKT::ConstIt it) {
         if (it->status == RBTreeKT::NodeStatus::NoChange) {
             switch (it->color) {
@@ -177,7 +176,7 @@ private:
             return;
         }
         if (curNode.get() == root_.get()) {
-            curNode->centre = kRootCoordinates;
+            curNode->centre = kStartRootCoordinates;
             SetCoordinates(curNode->left);
             SetCoordinates(curNode->right);
             return;
@@ -236,7 +235,7 @@ public:
     static constexpr const Scalar kHeightOfLevel = 60.;
     static constexpr const Scalar kMinDistBetweenNodes = -20.;
     static constexpr const Scalar kHalfWidthOfNodeView = 25.;
-    static constexpr const Point kRootCoordinates = {0, 0};
+    static constexpr const Point kStartRootCoordinates = {0, 0};
     static constexpr const Scalar kIndent = 50.;
 };
 
