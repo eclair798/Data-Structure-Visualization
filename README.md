@@ -53,19 +53,19 @@ mkdir build && cd build
 
 ```bash
 cmake ..
-make
+cmake --build . --config Release
 ```
 
 **macOS (если установлен qt через brew):**
 
 ```bash
 cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt@5)
-make
+cmake --build . --config Release
 ```
 
 ## ▶️ Запуск
 
 **Из папки build:**
 ```bash
-./app/RBTreeApp 
+./app/RBTree 
 ```

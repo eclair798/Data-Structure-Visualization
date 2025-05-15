@@ -2,27 +2,32 @@
 
 namespace rbtree {
 
-GeomModel::GeomModel(RBTreeINT* tree)
-    : teeObserver_([this](const RBTreeINT& changedTree) { this->UpdateFrom(changedTree); }) {
-    tree->SubscribeStep(&teeObserver_);
-    tree_ = std::make_shared<const GTree>(*tree);
+GTreeConst::GTreeConst(const RBTreeINT& tree) {
+    frame_ = std::make_shared<const GTree>(tree);
 }
 
-void GeomModel::UpdateFrom(const RBTreeINT& tree) {
-    tree_ = std::make_shared<const GTree>(tree);
-    NotifyFrame();
+const GTree* GTreeConst::operator->() const {
+    return frame_.get();
 }
 
-GTreeConstPtr GeomModel::GetCurrentFrame() const {
-    return tree_;
+bool GTreeConst::operator!() const {
+    return !frame_;
+}
+
+GeomModel::GeomModel()
+    : treePort_([this](const RBTreeINT& changedTree) { NotifyFrame(changedTree); }) {
+}
+
+void GeomModel::SubscribeTree(RBTreeINT* tree) {
+    tree->SubscribeTree(&treePort_);
 }
 
 void GeomModel::SubscribeFrame(GTreeObserver* observerPtr) {
     gtreeObservable_.subscribe(observerPtr);
 }
 
-void GeomModel::NotifyFrame() {
-    gtreeObservable_.notify();
+void GeomModel::NotifyFrame(const RBTreeINT& tree) {
+    gtreeObservable_.set(GTreeConst(tree));
 }
 
 }  // namespace rbtree

@@ -27,13 +27,27 @@ public:
 private:
     struct Node {
         using NodePtr = std::unique_ptr<Node>;
-        KeyType key;
+
+        Node() = default;
+
+        Node(int key) {
+            info.key = key;
+        }
+
+        struct Info {
+            KeyType key;
+            NodeColor color = NodeColor::Black;
+            NodeStatus status = NodeStatus::NoChange;
+        };
+
+        Info info;
+
+        // KeyType key;
+        // NodeColor color = NodeColor::Black;
+
         NodePtr left = nullptr;
         NodePtr right = nullptr;
         Node* parent = nullptr;
-        NodeColor color = NodeColor::Black;
-
-        NodeStatus status = NodeStatus::NoChange;
     };
 
     using NodePtr = typename Node::NodePtr;
@@ -43,7 +57,7 @@ public:
     using ConstIt = ConstIterator<Node>;
 
     using TreeObservable = NSLibrary::CObservable<const RBTree&, NSLibrary::CByReference>;
-    using TreeObserver = NSLibrary::CColdInput<const RBTree&, NSLibrary::CByReference>;
+    using TreeObserver = NSLibrary::CHotInput<const RBTree&, NSLibrary::CByReference>;
 
     It GetRoot() {
         return It{root_};
@@ -54,9 +68,6 @@ public:
     }
 
 public:
-    RBTree() {
-    }
-
     // Вставка нового ключа
     bool Insert(const KeyType& key) {
         StatusResetWithNotify();
@@ -69,13 +80,13 @@ public:
 
         // Дерево пустое
         if (!root_) {
-            newNode->color = NodeColor::Black;
+            newNode->info.color = NodeColor::Black;
             root_ = std::move(newNode);
 
             StatusResetWithNotify();
             return true;
         }
-        newNode->color = NodeColor::Red;
+        newNode->info.color = NodeColor::Red;
 
         // ищем нужное место и родителя этого места
         Node* current = root_.get();
@@ -83,7 +94,7 @@ public:
 
         while (current != nullptr) {
             parent = current;
-            if (key < current->key) {
+            if (key < current->info.key) {
                 current = current->left.get();
             } else {
                 current = current->right.get();
@@ -94,13 +105,13 @@ public:
         newNode->parent = parent;
         Node* rawNew = newNode.get();
 
-        if (key < parent->key) {
+        if (key < parent->info.key) {
             parent->left = std::move(newNode);
         } else {
             parent->right = std::move(newNode);
         }
 
-        rawNew->status = NodeStatus::Found;
+        rawNew->info.status = NodeStatus::Found;
         NotifyStep();
 
         // fixup
@@ -130,7 +141,7 @@ public:
 
         // y - удаляемый узел
         Node* y = z;
-        NodeColor yOriginalColor = y->color;
+        NodeColor yOriginalColor = y->info.color;
         Node* yOriginalParent = y->parent;
         KeyType yOriginalKey;
 
@@ -162,9 +173,13 @@ public:
         } else {
             // у z два ребёнка.
             y = Minimum(z->right.get());
-            yOriginalColor = y->color;
+            yOriginalColor = y->info.color;
             yOriginalParent = y->parent;
-            yOriginalKey = y->key;
+            yOriginalKey = y->info.key;
+
+            // поднимаем y на место z
+            z->info.key = yOriginalKey;
+            NotifyStep();
 
             x = y->right.get();
 
@@ -177,10 +192,6 @@ public:
             }
             yRef = std::move(yRight);
 
-            NotifyStep();
-
-            // поднимаем y на место z
-            z->key = yOriginalKey;
             tmpHolder.reset();
         }
 
@@ -191,11 +202,11 @@ public:
             return true;
         }
         if (x) {
-            assert(x->color == NodeColor::Red &&
+            assert(x->info.color == NodeColor::Red &&
                    "Error in Delete: The only child is black. The black height on the right and on "
                    "the "
                    "left is different");
-            x->color = NodeColor::Black;
+            x->info.color = NodeColor::Black;
 
             NotifyStep();
 
@@ -228,7 +239,7 @@ public:
         if (now == nullptr) {
             now = root_.get();
         }
-        now->status = NodeStatus::NoChange;
+        now->info.status = NodeStatus::NoChange;
         if (now->left) {
             StatusReset(now->left.get());
         }
@@ -237,6 +248,8 @@ public:
         }
     }
 
+    // У пользователя имеется возможность сбросить статусы сохранившиеся после выполнения каких либо функций.
+    // Например путь поиска после Search итд.
     void StatusResetWithNotify() {
         StatusReset();
         NotifyStep();
@@ -255,8 +268,9 @@ public:
         printSubtree = [&](const typename RBTree<KeyType>::NodePtr& node, std::string indent,
                            std::string branch) {
             if (node) {
-                os << indent << branch << node->key << "["
-                   << (node->color == RBTree<KeyType>::NodeColor::Red ? "R" : "B") << "]" << "\n";
+                os << indent << branch << node->info.key << "["
+                   << (node->info.color == RBTree<KeyType>::NodeColor::Red ? "R" : "B") << "]"
+                   << "\n";
                 printSubtree(node->left, indent + "    ", "L-- ");
                 printSubtree(node->right, indent + "    ", "R-- ");
             }
@@ -282,16 +296,16 @@ private:
         }
         Node* y = x->right.get();
 
-        x->status = NodeStatus::Intermediate;
-        y->status = NodeStatus::Intermediate;
+        x->info.status = NodeStatus::Intermediate;
+        y->info.status = NodeStatus::Intermediate;
         if (x->left) {
-            x->left->status = NodeStatus::Intermediate;
+            x->left->info.status = NodeStatus::Intermediate;
         }
         if (y->left) {
-            y->left->status = NodeStatus::Intermediate;
+            y->left->info.status = NodeStatus::Intermediate;
         }
         if (y->right) {
-            y->right->status = NodeStatus::Intermediate;
+            y->right->info.status = NodeStatus::Intermediate;
         }
         NotifyStep();
 
@@ -338,16 +352,16 @@ private:
         }
         Node* y = x->left.get();
 
-        x->status = NodeStatus::Intermediate;
-        y->status = NodeStatus::Intermediate;
+        x->info.status = NodeStatus::Intermediate;
+        y->info.status = NodeStatus::Intermediate;
         if (x->right) {
-            x->right->status = NodeStatus::Intermediate;
+            x->right->info.status = NodeStatus::Intermediate;
         }
         if (y->left) {
-            y->left->status = NodeStatus::Intermediate;
+            y->left->info.status = NodeStatus::Intermediate;
         }
         if (y->right) {
-            y->right->status = NodeStatus::Intermediate;
+            y->right->info.status = NodeStatus::Intermediate;
         }
         NotifyStep();
 
@@ -385,12 +399,12 @@ private:
         StatusResetWithNotify();
 
         // Пока есть родитель и он красный - нарушение свойства 3
-        while (x != root_.get() && x->parent->color == NodeColor::Red) {
+        while (x != root_.get() && x->parent->info.color == NodeColor::Red) {
             Node* parent = x->parent;
             Node* grandparent =
                 parent->parent;  // если есть красный отец то и дед должен быть, причем черный
             assert(grandparent && "Error in InsertFixup: red node has not parent");
-            assert(grandparent->color == NodeColor::Black &&
+            assert(grandparent->info.color == NodeColor::Black &&
                    "Error in InsertFixup: red node has red parent");
 
             if (parent == grandparent->left.get()) {
@@ -398,15 +412,15 @@ private:
                 Node* uncle = grandparent->right.get();
 
                 // 1) Дядя красный
-                if (uncle && uncle->color == NodeColor::Red) {
+                if (uncle && uncle->info.color == NodeColor::Red) {
                     // Перекрашиваем
-                    parent->color = NodeColor::Black;
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    uncle->color = NodeColor::Black;
+                    uncle->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    grandparent->color = NodeColor::Red;
+                    grandparent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     x = grandparent;
@@ -418,10 +432,10 @@ private:
                         parent = x->parent;
                         grandparent = parent->parent;
                     }
-                    parent->color = NodeColor::Black;
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    grandparent->color = NodeColor::Red;
+                    grandparent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     RotateRight(grandparent);
@@ -431,14 +445,14 @@ private:
                 Node* uncle = grandparent->left.get();
 
                 // 1) Дядя красный
-                if (uncle && uncle->color == NodeColor::Red) {
-                    parent->color = NodeColor::Black;
+                if (uncle && uncle->info.color == NodeColor::Red) {
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    uncle->color = NodeColor::Black;
+                    uncle->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    grandparent->color = NodeColor::Red;
+                    grandparent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     x = grandparent;
@@ -450,17 +464,17 @@ private:
                         parent = x->parent;
                         grandparent = parent->parent;
                     }
-                    parent->color = NodeColor::Black;
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    grandparent->color = NodeColor::Red;
+                    grandparent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     RotateLeft(grandparent);
                 }
             }
         }
-        root_->color = NodeColor::Black;
+        root_->info.color = NodeColor::Black;
         NotifyStep();
     }
 
@@ -473,7 +487,7 @@ private:
         StatusResetWithNotify();
 
         Node* x = nullptr;
-        while (x != root_.get() && (!x || x->color == NodeColor::Black)) {
+        while (x != root_.get() && (!x || x->info.color == NodeColor::Black)) {
             parent = x ? x->parent : parent;
 
             if (x == parent->left.get()) {
@@ -482,9 +496,9 @@ private:
                 assert(w && "Error in DeleteFixup: x has not brother");
 
                 // 1. Если брат красный
-                if (w->color == NodeColor::Red) {
-                    w->color = NodeColor::Black;
-                    parent->color = NodeColor::Red;
+                if (w->info.color == NodeColor::Red) {
+                    w->info.color = NodeColor::Black;
+                    parent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     RotateLeft(parent);
@@ -493,21 +507,21 @@ private:
                 }
 
                 // 2. Если дети брата чёрные
-                if ((!w->left || w->left->color == NodeColor::Black) &&
-                    (!w->right || w->right->color == NodeColor::Black)) {
-                    w->color = NodeColor::Red;
+                if ((!w->left || w->left->info.color == NodeColor::Black) &&
+                    (!w->right || w->right->info.color == NodeColor::Black)) {
+                    w->info.color = NodeColor::Red;
                     NotifyStep();
 
                     x = parent;
                     continue;
                 } else {
                     // 3. Если левый ребёнок брата красный, а правый чёрный
-                    if (!w->right || w->right->color == NodeColor::Black) {
+                    if (!w->right || w->right->info.color == NodeColor::Black) {
                         if (w->left) {
-                            w->left->color = NodeColor::Black;
+                            w->left->info.color = NodeColor::Black;
                             NotifyStep();
                         }
-                        w->color = NodeColor::Red;
+                        w->info.color = NodeColor::Red;
                         NotifyStep();
                         RotateRight(w);
                         w = parent->right.get();
@@ -517,14 +531,14 @@ private:
                         }
                     }
                     // 4. Правый ребёнок брата красный
-                    w->color = parent->color;
+                    w->info.color = parent->info.color;
                     NotifyStep();
 
-                    parent->color = NodeColor::Black;
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
                     if (w->right) {
-                        w->right->color = NodeColor::Black;
+                        w->right->info.color = NodeColor::Black;
                         NotifyStep();
                     }
                     RotateLeft(parent);
@@ -536,11 +550,11 @@ private:
                 assert(w && "Error in DeleteFixup: x has not brother");
 
                 // 1. Брат красный
-                if (w->color == NodeColor::Red) {
-                    w->color = NodeColor::Black;
+                if (w->info.color == NodeColor::Red) {
+                    w->info.color = NodeColor::Black;
                     NotifyStep();
 
-                    parent->color = NodeColor::Red;
+                    parent->info.color = NodeColor::Red;
                     NotifyStep();
 
                     RotateRight(parent);
@@ -549,21 +563,21 @@ private:
                 }
 
                 // 2. Оба ребёнка брата чёрные
-                if ((!w->left || w->left->color == NodeColor::Black) &&
-                    (!w->right || w->right->color == NodeColor::Black)) {
-                    w->color = NodeColor::Red;
+                if ((!w->left || w->left->info.color == NodeColor::Black) &&
+                    (!w->right || w->right->info.color == NodeColor::Black)) {
+                    w->info.color = NodeColor::Red;
                     NotifyStep();
 
                     x = parent;
                     continue;
                 } else {
                     // 3. Правый ребёнок брата красный, а левый чёрный
-                    if (!w->left || w->left->color == NodeColor::Black) {
+                    if (!w->left || w->left->info.color == NodeColor::Black) {
                         if (w->right) {
-                            w->right->color = NodeColor::Black;
+                            w->right->info.color = NodeColor::Black;
                             NotifyStep();
                         }
-                        w->color = NodeColor::Red;
+                        w->info.color = NodeColor::Red;
                         NotifyStep();
 
                         RotateLeft(w);
@@ -574,14 +588,14 @@ private:
                         }
                     }
                     // 4. Левый ребёнок брата красный
-                    w->color = parent->color;
+                    w->info.color = parent->info.color;
                     NotifyStep();
 
-                    parent->color = NodeColor::Black;
+                    parent->info.color = NodeColor::Black;
                     NotifyStep();
 
                     if (w->left) {
-                        w->left->color = NodeColor::Black;
+                        w->left->info.color = NodeColor::Black;
                         NotifyStep();
                     }
                     RotateRight(parent);
@@ -589,7 +603,7 @@ private:
                 }
             }
         }
-        x->color = NodeColor::Black;
+        x->info.color = NodeColor::Black;
         NotifyStep();
     }
 
@@ -599,14 +613,14 @@ private:
 
         Node* current = root_.get();
         while (current != nullptr) {
-            current->status = NodeStatus::Intermediate;
-            if (key < current->key) {
+            current->info.status = NodeStatus::Intermediate;
+            if (key < current->info.key) {
                 current = current->left.get();
-            } else if (key > current->key) {
+            } else if (key > current->info.key) {
                 current = current->right.get();
             } else {
-                current->status = NodeStatus::Found;
-                NotifyStepTwice();
+                current->info.status = NodeStatus::Found;
+                NotifyStep();
                 return current;
             }
             NotifyStep();
@@ -620,12 +634,12 @@ private:
 
         Node* current = subtreeRoot;
         while (current->left) {
-            current->status = NodeStatus::Intermediate;
+            current->info.status = NodeStatus::Intermediate;
             current = current->left.get();
             NotifyStep();
         }
-        current->status = NodeStatus::Found;
-        NotifyStepTwice();
+        current->info.status = NodeStatus::Found;
+        NotifyStep();
         return current;
     }
 
@@ -646,18 +660,13 @@ private:
     }
 
 public:
-    void SubscribeStep(TreeObserver* observerPtr) {
+    void SubscribeTree(TreeObserver* observerPtr) {
         treeObservable_.subscribe(observerPtr);
     }
 
 private:
     void NotifyStep() {
         treeObservable_.notify();
-    }
-
-    void NotifyStepTwice() {
-        NotifyStep();
-        NotifyStep();
     }
 
 private:

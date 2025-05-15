@@ -7,34 +7,43 @@ namespace rbtree {
 using Key = int;
 using RBTreeINT = RBTree<Key>;
 using GTree = GeomTree<Key>;
-using GTreeConstPtr = std::shared_ptr<const GTree>;
 using GNode = GTree::GeomNode;
+
+class GTreeConst {
+public:
+    GTreeConst() = default;
+
+    GTreeConst(const RBTreeINT& tree);
+
+    const GTree* operator->() const;
+
+    bool operator!() const;
+
+private:
+    std::shared_ptr<const GTree> frame_;
+};
 
 class GeomModel {
 public:
-    using GTreeObservable = NSLibrary::CObservable<GTreeConstPtr, NSLibrary::CByValue>;
-    using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
+    using GTreeObservable = NSLibrary::CObservableData<GTreeConst, NSLibrary::CByValue>;
+    using GTreeObserver = NSLibrary::CHotInput<GTreeConst, NSLibrary::CByValue>;
 
-    using TreeObserver = NSLibrary::CColdInput<const RBTreeINT&, NSLibrary::CByReference>;
+    using TreeObserver = NSLibrary::CHotInput<const RBTreeINT&, NSLibrary::CByReference>;
 
-    GeomModel(RBTreeINT* tree);
+    GeomModel();
 
-    void UpdateFrom(const RBTreeINT& tree);
-    GTreeConstPtr GetCurrentFrame() const;
+    void SubscribeTree(RBTreeINT* tree);
 
 public:
     void SubscribeFrame(GTreeObserver* observerPtr);
 
 private:
-    void NotifyFrame();
+    void NotifyFrame(const RBTreeINT& tree);
 
 private:
-    GTreeConstPtr tree_;
-    TreeObserver teeObserver_;
+    TreeObserver treePort_;
 
-    GTreeObservable gtreeObservable_{[this]() -> GTreeConstPtr {
-        return GetCurrentFrame();
-    }};
+    GTreeObservable gtreeObservable_;
 };
 
 }  // namespace rbtree

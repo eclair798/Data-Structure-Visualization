@@ -2,41 +2,29 @@
 
 namespace rbtree {
 
-const TreeExporter::String TreeExporter::kDefaultFileName = "RBTreeVisualisation.png";
+const TreeExporter::Path TreeExporter::kDefaultFileName = "RBTreeVisualization.png";
 
-TreeExporter::Path TreeExporter::GetPathInDownloads(const String& fileName) {
+TreeExporter::Path TreeExporter::GetPathInDownloads(const Path& fileName) {
     auto downloads =
         QStandardPaths::writableLocation(QStandardPaths::DownloadLocation).toStdString();
     return Path(downloads) / fileName;
 }
 
-bool TreeExporter::SaveToPng(TreeView* view, String fileName) {
-    if (!view) {
+bool TreeExporter::SaveAsPng(QImage* image, QString qFileName) {
+    Path fileName = Path(qFileName.toStdString());
+    if (!image) {
         return false;
     }
     if (fileName.empty()) {
         fileName = kDefaultFileName;
     }
 
-    QSize realTreeSize = view->TreeSize();
-    QImage image(realTreeSize, QImage::Format_ARGB32);
-    image.fill(Qt::white);
-
-    QPainter painter(&image);
-
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setRenderHint(QPainter::TextAntialiasing, true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-    view->render(&painter);
-    painter.end();
-
     Path fullPath = GetPathInDownloads(fileName);
     if (fullPath.extension() != ".png") {
         fullPath += ".png";
     }
 
-    return image.save(QString::fromStdString(fullPath.string()), "PNG");
+    return image->save(QString::fromStdString(fullPath.string()), "PNG");
 }
 
 }  // namespace rbtree

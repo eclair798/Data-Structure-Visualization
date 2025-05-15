@@ -13,12 +13,21 @@ namespace rbtree {
 class Animator : public QObject {
     Q_OBJECT
 
+    struct Interval {
+        int from;
+        int to;
+    };
+
 public:
-    using GTreeObserver = NSLibrary::CColdInput<GTreeConstPtr, NSLibrary::CByValue>;
+    using GTreeObserver = NSLibrary::CHotInput<GTreeConst, NSLibrary::CByValue>;
 
-    Animator(GeomModel* gModel, int startRate, int maxRate, QObject* parent = nullptr);
+    Animator(QObject* parent = nullptr);
 
-    GTreeConstPtr PopFrame();
+    void SubscribeFrame(GeomModel* gModel);
+
+    GTreeConst PopFrame();
+
+    QTimer* getTimerPtr();
 
 signals:
     void FrameReady();
@@ -27,14 +36,17 @@ private slots:
     void OnTimeout();
 
 private:
-    void EnqueueFrame(GTreeConstPtr frame);
+    void EnqueueFrame(GTreeConst frame);
 
 public:
-    std::unique_ptr<QTimer> timer;
+    static constexpr const int kStartRate = 1000;
+    static constexpr const Interval kRateRange = {0, 1500};
 
 private:
-    GTreeObserver gteeObserver_;
-    std::queue<GTreeConstPtr> frames_;
+    QTimer timer_;
+
+    GTreeObserver gtreePort_;
+    std::queue<GTreeConst> frames_;
 };
 
 }  // namespace rbtree

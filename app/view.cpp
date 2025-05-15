@@ -7,7 +7,7 @@ const QString TreeView::kFontName = "Courier New";
 TreeView::TreeView(QWidget *parent) : QWidget(parent) {
 }
 
-void TreeView::ShowFrame(GTreeConstPtr frame) {
+void TreeView::ShowFrame(GTreeConst frame) {
     currentFrame_ = std::move(frame);
     UpdatePicture();
 }
@@ -38,78 +38,55 @@ void TreeView::paintEvent(QPaintEvent *) {
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    DrawTree(painter);
+    DrawTree(&painter);
+    painter.end();
 }
 
-void TreeView::DrawTree(QPainter &painter) {
+void TreeView::DrawTree(QPainter *painter) {
     ConstIt it = currentFrame_->GetRoot();
     if (!it) {
         return;
     }
-    painter.scale(scaler, scaler);
+    painter->scale(scaler, scaler);
     DrawNode(painter, it);
 }
 
-void TreeView::DrawNode(QPainter &painter, ConstIt nodeIt) {
+void TreeView::DrawNode(QPainter *painter, ConstIt nodeIt) {
     if (!nodeIt) {
         return;
     }
-    DrawEdge(painter, nodeIt, nodeIt->left);
-    DrawEdge(painter, nodeIt, nodeIt->right);
+    DrawEdge(painter, nodeIt, nodeIt.Left());
+    DrawEdge(painter, nodeIt, nodeIt.Right());
 
-    QPointF centre = MakeQPoint(nodeIt->centre);
-    QScalar halfWidth(nodeIt->halfWidth);
-    QColor color = MakeQColor(nodeIt->color);
-    QString text = MakeQString(nodeIt->key);
+    QPointF centre = nodeIt.getInfo().centre;
+    QScalar halfWidth = nodeIt.getInfo().halfWidth;
+    QColor color = nodeIt.getInfo().color;
+    QString text = nodeIt.getInfo().key;
     QRectF rect;
-    if (nodeIt->shape == GTree::NodeShape::Circle) {
+
+    if (nodeIt.getInfo().shape == GTree::NodeShape::Circle) {
         rect = CircleToRect(centre, halfWidth);
     } else {
         rect = GetRect(centre, halfWidth);
     }
-    DrawNodeWithCenteredText(painter, rect, text, color, nodeIt->shape);
+    DrawNodeWithCenteredText(painter, rect, text, color, nodeIt.getInfo().shape);
 
-    DrawNode(painter, nodeIt->left);
-    DrawNode(painter, nodeIt->right);
+    DrawNode(painter, nodeIt.Left());
+    DrawNode(painter, nodeIt.Right());
 }
 
-void TreeView::DrawEdge(QPainter &painter, ConstIt nodeItFrom, ConstIt nodeItTo) {
+void TreeView::DrawEdge(QPainter *painter, ConstIt nodeItFrom, ConstIt nodeItTo) {
     if (!nodeItFrom || !nodeItTo) {
         return;
     }
-    QPoint from(nodeItFrom->centre.x, nodeItFrom->centre.y);
-    QPoint to(nodeItTo->centre.x, nodeItTo->centre.y);
-    painter.setPen(Qt::black);
-    painter.drawLine(from, to);
+    QPoint from(nodeItFrom.getInfo().centre.x(), nodeItFrom.getInfo().centre.y());
+    QPoint to(nodeItTo.getInfo().centre.x(), nodeItTo.getInfo().centre.y());
+    painter->setPen(Qt::black);
+    painter->drawLine(from, to);
 }
 
-int TreeView::CeilScalar(Scalar val) {
+int TreeView::CeilScalar(QScalar val) {
     return static_cast<int>(std::ceil(val));
-}
-
-QColor TreeView::MakeQColor(Color color) {
-    switch (color) {
-        case GTree::Color::Red:
-            return kCustomDarkRed;
-        case GTree::Color::Black:
-            return kCustomBlack;
-        case GTree::Color::Gray:
-            return kCustomLighterBlack;
-        case GTree::Color::LightRed:
-            return kCustomLighterDarkRed;
-        case GTree::Color::Green:
-            return Qt::darkGreen;
-        default:
-            assert(false);
-    }
-}
-
-QPointF TreeView::MakeQPoint(Point point) {
-    return QPointF(point.x, point.y);
-}
-
-QString TreeView::MakeQString(Text text) {
-    return QString::fromStdString(text);
 }
 
 QRectF TreeView::CircleToRect(QPointF centre, QScalar radius) {
@@ -122,23 +99,23 @@ QRectF TreeView::GetRect(QPointF centre, QScalar halfWidth) {
     return rect;
 }
 
-void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QString &text,
+void TreeView::DrawNodeWithCenteredText(QPainter *painter, QRectF rect, const QString &text,
                                         const QColor &fillColor, GTree::NodeShape shape) {
     QFont font(kFontName, kFontSize);
 
-    painter.setBrush(fillColor);
-    painter.setPen(Qt::black);
+    painter->setBrush(fillColor);
+    painter->setPen(Qt::black);
     if (shape == GTree::NodeShape::Circle) {
-        painter.drawEllipse(rect);
+        painter->drawEllipse(rect);
         font.setBold(true);
     } else {
-        painter.drawRect(rect);
+        painter->drawRect(rect);
     }
 
     int size = kFontSize;
     while (size > 1) {
         font.setPointSize(size);
-        painter.setFont(font);
+        painter->setFont(font);
         QFontMetricsF fm(font);
         QRectF textRect = fm.boundingRect(text);
         if (rect.width() - textRect.width() > kTextIndent &&
@@ -148,8 +125,8 @@ void TreeView::DrawNodeWithCenteredText(QPainter &painter, QRectF rect, const QS
         --size;
     }
 
-    painter.setPen(Qt::white);
-    painter.drawText(rect, Qt::AlignCenter, text);
+    painter->setPen(Qt::white);
+    painter->drawText(rect, Qt::AlignCenter, text);
 }
 
 }  // namespace rbtree

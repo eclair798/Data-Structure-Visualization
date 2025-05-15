@@ -2,6 +2,8 @@
 
 namespace rbtree {
 
+const QString MainWindow::kWindowTitle = "Red-Black Tree Visualization";
+
 const QString MainWindow::kStartStyleSheet = R"(
         QPushButton, QLineEdit {
             background-color: white;
@@ -57,7 +59,7 @@ const QString MainWindow::kDeleteStr = "Delete";
 const QString MainWindow::kFindStr = "Find";
 const QString MainWindow::kResetStr = "Reset";
 const QString MainWindow::kStatusResetStr = "Reset Statuses";
-const QString MainWindow::kViewSaveStr = "Save in PNG";
+const QString MainWindow::kViewSaveStr = "Save as PNG";
 
 const QString MainWindow::kPauseStr = "Pause";
 
@@ -67,7 +69,26 @@ const QString MainWindow::kStartMessage =
     "Hello! Create your Red Black Tree!\nIf you want to save picture: enter the name of "
     "the picture and push Save Button";
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent)
+    : insertButton(kInsertStr, this),
+      deleteButton(kDeleteStr, this),
+      findButton(kFindStr, this),
+      resetButton(kResetStr, this),
+      statusResetButton(kStatusResetStr, this),
+
+      rateSlider(Qt::Horizontal, this),
+
+      pauseButton(kPauseStr, this),
+
+      scaleSlider(Qt::Horizontal, this),
+
+      messageLabel(kStartMessage, this),
+
+      viewSaveButton(kViewSaveStr, this),
+
+      QMainWindow(parent) {
+    this->setWindowTitle(kWindowTitle);
+
     QPalette lightPalette;
     lightPalette.setColor(QPalette::Window, Qt::white);
     this->setStyleSheet(kStartStyleSheet);
@@ -78,82 +99,65 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
 
-    treeView = std::make_unique<TreeView>(this);
-
     QScrollArea* scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setWidget(treeView.get());
+    scrollArea->setWidget(&treeView);
 
-    mainLayout->addWidget(scrollArea, kHalvesProportion.first);
+    mainLayout->addWidget(scrollArea, kHalvesProportion.left);
 
     QWidget* rightPanel = new QWidget(this);
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
 
-    // Поле для ввода
-    keyEdit = std::make_unique<QLineEdit>(this);
-
     // Кнопки
-    insertButton = std::make_unique<QPushButton>(kInsertStr, this);
-    deleteButton = std::make_unique<QPushButton>(kDeleteStr, this);
-    findButton = std::make_unique<QPushButton>(kFindStr, this);
-    resetButton = std::make_unique<QPushButton>(kResetStr, this);
-    statusResetButton = std::make_unique<QPushButton>(kStatusResetStr, this);
-
-    rightLayout->addWidget(keyEdit.get());
-    rightLayout->addWidget(insertButton.get());
-    rightLayout->addWidget(deleteButton.get());
-    rightLayout->addWidget(findButton.get());
-    rightLayout->addWidget(resetButton.get());
-    rightLayout->addWidget(statusResetButton.get());
+    rightLayout->addWidget(&keyEdit);
+    rightLayout->addWidget(&insertButton);
+    rightLayout->addWidget(&deleteButton);
+    rightLayout->addWidget(&findButton);
+    rightLayout->addWidget(&resetButton);
+    rightLayout->addWidget(&statusResetButton);
 
     // Ползунок таймера
-    rateSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    rateSlider->setRange(kRateRange.first, kRateRange.second);
-    rateSlider->setValue(kStartRate);
+    rateSlider.setRange(Animator::kRateRange.from, Animator::kRateRange.to);
+    rateSlider.setValue(Animator::kStartRate);
 
     QLabel* rateLabel = new QLabel(kRateComment, this);
-
     QWidget* rateWidget = new QWidget(this);
     QVBoxLayout* rateGroupLayout = new QVBoxLayout(rateWidget);
     rateGroupLayout->setContentsMargins(0, 0, 0, 0);
     rateGroupLayout->addWidget(rateLabel);
-    rateGroupLayout->addWidget(rateSlider.get());
+    rateGroupLayout->addWidget(&rateSlider);
     rateWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     rightLayout->addWidget(rateWidget);
 
-    // кнопка паузы
+    // Кнопка паузы
 
-    pauseButton = std::make_unique<QPushButton>(kPauseStr, this);
-    pauseButton->setCheckable(true);
-    rightLayout->addWidget(pauseButton.get());
+    pauseButton.setCheckable(true);
+    rightLayout->addWidget(&pauseButton);
 
     // Ползунок масштабирования
-    scaleSlider = std::make_unique<QSlider>(Qt::Horizontal, this);
-    scaleSlider->setRange(kScaleRange.first, kScaleRange.second);
-    scaleSlider->setValue(kStartScale);
+    scaleSlider.setRange(TreeView::kScaleRange.from, TreeView::kScaleRange.to);
+    scaleSlider.setValue(TreeView::kStartScale);
 
     QLabel* scaleLabel = new QLabel(kScaleComment, this);
-
     QWidget* scaleWidget = new QWidget(this);
     QVBoxLayout* scaleGroupLayout = new QVBoxLayout(scaleWidget);
     scaleGroupLayout->setContentsMargins(0, 0, 0, 0);
     scaleGroupLayout->addWidget(scaleLabel);
-    scaleGroupLayout->addWidget(scaleSlider.get());
+    scaleGroupLayout->addWidget(&scaleSlider);
     scaleWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     rightLayout->addWidget(scaleWidget);
 
     // Окошко с сообщением
-    messageLabel = std::make_unique<QLabel>(kStartMessage, this);
-    messageLabel->setWordWrap(true);
+    messageLabel.setWordWrap(true);
 
     QFrame* messageFrame = new QFrame(this);
     QVBoxLayout* frameLayout = new QVBoxLayout(messageFrame);
-    frameLayout->addWidget(messageLabel.get());
+    frameLayout->addWidget(&messageLabel);
 
     frameLayout->setContentsMargins(kContentMargins, kContentMargins, kContentMargins,
                                     kContentMargins);
 
-    frameLayout->setAlignment(messageLabel.get(), Qt::AlignCenter);
+    frameLayout->setAlignment(&messageLabel, Qt::AlignCenter);
 
     messageFrame->setFrameShape(QFrame::StyledPanel);
     messageFrame->setFrameShadow(QFrame::Raised);
@@ -163,18 +167,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rightLayout->addWidget(messageFrame);
 
     // Ввод названия файла и кнопка для сохранения
-
-    fileNameEdit = std::make_unique<QLineEdit>(this);
-    viewSaveButton = std::make_unique<QPushButton>(kViewSaveStr, this);
-    rightLayout->addWidget(fileNameEdit.get());
-    rightLayout->addWidget(viewSaveButton.get());
+    rightLayout->addWidget(&fileNameEdit);
+    rightLayout->addWidget(&viewSaveButton);
 
     // Вся панель настроек
     rightPanel->setFixedWidth(kRightPanelWidth);
 
-    mainLayout->addWidget(rightPanel, kHalvesProportion.second);
+    mainLayout->addWidget(rightPanel, kHalvesProportion.right);
 
-    resize(kWindowShape.first, kWindowShape.second);
+    resize(kWindowShape.w, kWindowShape.h);
 }
 
 }  // namespace rbtree

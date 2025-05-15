@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "animator.h"
 #include "view.h"
 
 namespace rbtree {
@@ -19,31 +20,42 @@ namespace rbtree {
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
+    struct HalvesProportion {
+        int left;
+        int right;
+    };
+
+    struct Shape {
+        int w;
+        int h;
+    };
+
 public:
     MainWindow(QWidget* parent = nullptr);
 
-public:
-    std::unique_ptr<TreeView> treeView;
+    TreeView treeView;
 
-    std::unique_ptr<QLineEdit> keyEdit;
-    std::unique_ptr<QPushButton> insertButton;
-    std::unique_ptr<QPushButton> deleteButton;
-    std::unique_ptr<QPushButton> findButton;
-    std::unique_ptr<QPushButton> resetButton;
-    std::unique_ptr<QPushButton> statusResetButton;
+    QLineEdit keyEdit;
+    QPushButton insertButton;
+    QPushButton deleteButton;
+    QPushButton findButton;
+    QPushButton resetButton;
+    QPushButton statusResetButton;
 
-    std::unique_ptr<QSlider> rateSlider;
+    QSlider rateSlider;
 
-    std::unique_ptr<QPushButton> pauseButton;
+    QPushButton pauseButton;
 
-    std::unique_ptr<QSlider> scaleSlider;
+    QSlider scaleSlider;
 
-    std::unique_ptr<QLabel> messageLabel;
+    QLabel messageLabel;
 
-    std::unique_ptr<QLineEdit> fileNameEdit;
-    std::unique_ptr<QPushButton> viewSaveButton;
+    QLineEdit fileNameEdit;
+    QPushButton viewSaveButton;
 
-public:
+private:
+    static const QString kWindowTitle;
+
     static const QString kStartStyleSheet;
 
     static const QString kInsertStr;
@@ -55,17 +67,12 @@ public:
     static const QString kPauseStr;
 
     static const QString kRateComment;
-    static constexpr const std::pair<int, int> kRateRange = {0, 1500};
-    static constexpr const int kStartRate = 1000;
 
     static const QString kScaleComment;
-    static constexpr const std::pair<int, int> kScaleRange = {10, 200};
-    static constexpr const int kStartScale = 100;
-    static constexpr const float kScaleRangeScale = 100;
 
-    static constexpr const std::pair<int, int> kHalvesProportion = {1, 0};
+    static constexpr const HalvesProportion kHalvesProportion = {1, 0};
     static constexpr const int kRightPanelWidth = 200;
-    static constexpr const std::pair<int, int> kWindowShape = {1000, 650};
+    static constexpr const Shape kWindowShape = {1000, 650};
 
     static const QString kStartMessage;
 

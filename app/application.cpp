@@ -2,96 +2,75 @@
 
 namespace rbtree {
 
-Application::Application(int argc, char* argv[]) {
-    QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
-
-    qApp_ = std::make_unique<QApplication>(argc, argv);
-
-    window_ = std::make_unique<MainWindow>();  // создается вьюха
-
-    tree_ = std::make_unique<RBTreeINT>();
-    geomModel_ = std::make_unique<GeomModel>(tree_.get());
-
-    animator_ = std::make_unique<Animator>(geomModel_.get(), window_->rateSlider->value(),
-                                           window_->kRateRange.second,
-                                           window_.get());  // внутри заводится таймер
-
-    treeController_ =
-        std::make_unique<TreeController>(tree_.get(), window_->keyEdit.get(), window_.get());
-    timerController_ = std::make_unique<TimerController>(animator_->timer.get(),
-                                                         window_->pauseButton.get(), window_.get());
-    viewController_ = std::make_unique<ViewController>(window_->treeView.get(),
-                                                       window_->fileNameEdit.get(), window_.get());
-
+Application::Application()
+    : geomModel_(),
+      animator_(&window_),
+      treeController_(&tree_, &window_.keyEdit, &window_),
+      timerController_(animator_.getTimerPtr(), &window_.pauseButton, &window_),
+      viewController_(&window_.treeView, &window_.fileNameEdit, &window_) {
     SetupConnections();
+    window_.show();
 }
 
 void Application::SetupConnections() {
+    geomModel_.SubscribeTree(&tree_);
+    animator_.SubscribeFrame(&geomModel_);
+
     // шаблон connect(sender, &SenderType::signalName, receiver, &ReceiverType::slotName);
     // или connect(sender, &SenderType::signalName, [](){} );
 
     // connect Аниматора с вьюхой
-    QObject::connect(animator_.get(), &Animator::FrameReady,
-                     [this]() { window_->treeView->ShowFrame(animator_->PopFrame()); });
+    QObject::connect(&animator_, &Animator::FrameReady,
+                     [this]() { window_.treeView.ShowFrame(animator_.PopFrame()); });
 
     // connect Кнопок с контроллером
-    QObject::connect(window_->insertButton.get(), &QPushButton::clicked, treeController_.get(),
+    QObject::connect(&window_.insertButton, &QPushButton::clicked, &treeController_,
                      &TreeController::HandleInsert);
-    QObject::connect(window_->deleteButton.get(), &QPushButton::clicked, treeController_.get(),
+    QObject::connect(&window_.deleteButton, &QPushButton::clicked, &treeController_,
                      &TreeController::HandleDelete);
-    QObject::connect(window_->findButton.get(), &QPushButton::clicked, treeController_.get(),
+    QObject::connect(&window_.findButton, &QPushButton::clicked, &treeController_,
                      &TreeController::HandleFind);
-    QObject::connect(window_->resetButton.get(), &QPushButton::clicked, treeController_.get(),
+    QObject::connect(&window_.resetButton, &QPushButton::clicked, &treeController_,
                      &TreeController::HandleReset);
-    QObject::connect(window_->statusResetButton.get(), &QPushButton::clicked, treeController_.get(),
+    QObject::connect(&window_.statusResetButton, &QPushButton::clicked, &treeController_,
                      &TreeController::HandleStatusReset);
 
-    QObject::connect(window_->viewSaveButton.get(), &QPushButton::clicked, viewController_.get(),
+    QObject::connect(&window_.viewSaveButton, &QPushButton::clicked, &viewController_,
                      &ViewController::HandleViewSave);
 
     // connect Ползунка скорости с контроллером
-    QObject::connect(window_->rateSlider.get(), &QSlider::valueChanged, [this](int rate) {
-        timerController_->HandleRateChange(rate, window_->kRateRange.second);
+    QObject::connect(&window_.rateSlider, &QSlider::valueChanged, [this](int rate) {
+        timerController_.HandleRateChange(rate, Animator::kRateRange.to);
     });
 
-    QObject::connect(window_->pauseButton.get(), &QPushButton::toggled,
-                     [this](bool push) { timerController_->HandlePause(push); });
+    QObject::connect(&window_.pauseButton, &QPushButton::toggled, &timerController_,
+                     &TimerController::HandlePause);
 
     // connect Ползунка масштабирования с контроллером
-    QObject::connect(window_->scaleSlider.get(), &QSlider::valueChanged, [this](int scale) {
-        viewController_->HandleScaleChange(scale, window_->kScaleRangeScale);
-    });
+    QObject::connect(&window_.scaleSlider, &QSlider::valueChanged, &viewController_,
+                     &ViewController::HandleScaleChange);
 
     // connect Контроллера с сообщением для пользователя
-    QObject::connect(treeController_.get(), &TreeController::NewMessage,
-                     [this](const QString& message) {
-                         window_->messageLabel->setStyleSheet("");
-                         window_->messageLabel->setText(message);
-                     });
+    QObject::connect(&treeController_, &TreeController::NewMessage, [this](const QString& message) {
+        window_.messageLabel.setStyleSheet("");
+        window_.messageLabel.setText(message);
+    });
 
-    QObject::connect(viewController_.get(), &ViewController::NewMessage,
-                     [this](const QString& message) {
-                         window_->messageLabel->setStyleSheet("");
-                         window_->messageLabel->setText(message);
-                     });
+    QObject::connect(&viewController_, &ViewController::NewMessage, [this](const QString& message) {
+        window_.messageLabel.setStyleSheet("");
+        window_.messageLabel.setText(message);
+    });
 
     // connect Контроллера с сообщением об ошибке
-    QObject::connect(treeController_.get(), &TreeController::NewError,
-                     [this](const QString& error) {
-                         window_->messageLabel->setStyleSheet("color: red;");
-                         window_->messageLabel->setText(error);
-                     });
+    QObject::connect(&treeController_, &TreeController::NewError, [this](const QString& error) {
+        window_.messageLabel.setStyleSheet("color: red;");
+        window_.messageLabel.setText(error);
+    });
 
-    QObject::connect(viewController_.get(), &ViewController::NewError,
-                     [this](const QString& error) {
-                         window_->messageLabel->setStyleSheet("color: red;");
-                         window_->messageLabel->setText(error);
-                     });
-}
-
-int Application::Run() {
-    window_->show();
-    return qApp_->exec();
+    QObject::connect(&viewController_, &ViewController::NewError, [this](const QString& error) {
+        window_.messageLabel.setStyleSheet("color: red;");
+        window_.messageLabel.setText(error);
+    });
 }
 
 }  // namespace rbtree

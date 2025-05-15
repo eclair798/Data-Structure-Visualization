@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QColor>
+#include <QString>
+#include <QPointF>
+
 #include "tree.h"
 
 namespace rbtree {
@@ -7,81 +11,50 @@ namespace rbtree {
 template<typename KeyType = int>
 class GeomTree {
 public:
-    enum class Color : std::uint8_t {
-        Black,
-        Gray,
-        Red,
-        LightRed,
-        Green,  // нашли вершину
-    };
-
-    using Scalar = double;
-
     enum class NodeShape : std::uint8_t { Circle, Rect };
-
-    struct Point {
-        Scalar x = 0;
-        Scalar y = 0;
-
-        Point operator+(const Point& other) const {
-            return {x + other.x, y + other.y};
-        }
-
-        Point operator-(const Point& other) const {
-            return {x - other.x, y - other.y};
-        }
-
-        Point& operator+=(const Point& other) {
-            x += other.x;
-            y += other.y;
-            return *this;
-        }
-
-        Point& operator-=(const Point& other) {
-            x -= other.x;
-            y -= other.y;
-            return *this;
-        }
-    };
-
-    using Text = std::string;
+    using QScalar = qreal;
 
 public:
     using RBTreeKT = RBTree<KeyType>;
     using NumOfLevel = int;
 
-    static Color GetNodeColor(typename RBTreeKT::ConstIt it) {
-        if (it->status == RBTreeKT::NodeStatus::NoChange) {
-            switch (it->color) {
-                case RBTreeKT::NodeColor::Red:
-                    return Color::Red;
-                default:
-                    return Color::Black;
+    static QColor GetNodeColor(typename RBTreeKT::ConstIt it) {
+        if (it.getInfo().status == RBTreeKT::NodeStatus::NoChange) {
+            if (it.getInfo().color == RBTreeKT::NodeColor::Red) {
+                return kCustomDarkRed;
+            } else {
+                return kCustomBlack;
             }
         }
-        if (it->status == RBTreeKT::NodeStatus::Found) {
-            return Color::Green;
+
+        if (it.getInfo().status == RBTreeKT::NodeStatus::Found) {
+            return kCustomGreen;
         }
-        switch (it->color) {
-            case RBTreeKT::NodeColor::Red:
-                return Color::LightRed;
-            default:
-                return Color::Gray;
+
+        if (it.getInfo().color == RBTreeKT::NodeColor::Red) {
+            return kCustomLighterDarkRed;
+        } else {
+            return kCustomLighterBlack;
         }
     }
 
 public:
     struct GeomNode {
         using GeomNodePtr = std::unique_ptr<GeomNode>;
-        Point centre;
-        Scalar halfWidth = kHalfWidthOfNodeView;
-        NodeShape shape = NodeShape::Circle;
 
-        Color color = Color::Black;
+        struct Info {
+            QPointF centre;
+            QScalar halfWidth = kHalfWidthOfNodeView;
+            NodeShape shape = NodeShape::Circle;
 
-        Text key;
-        Scalar widthOfSubtree;
-        Scalar heightOfSubtree;
+            QColor color = kCustomBlack;
+            QString key;
+
+            QScalar widthOfSubtree;
+            QScalar heightOfSubtree;
+        };
+
+        Info info;
 
         GeomNodePtr left = nullptr;
         GeomNodePtr right = nullptr;
@@ -102,73 +75,72 @@ public:
         return ConstIt{root_};
     }
 
-public:
     GeomTree(const RBTreeKT& tree) {
         SetNode(root_, tree.GetRoot());
         SetCoordinates(root_);
 
-        Point shift{LeftWidth() + kIndent, kIndent};
+        QPointF shift{LeftWidth() + kIndent, kIndent};
         ShiftCoordinates(root_, shift);
         AlignCoordinates(root_);
     }
 
 public:
-    Scalar LeftWidth() const {
+    QScalar LeftWidth() const {
         if (!root_) {
             return 0;
         }
-        Scalar leftW;
+        QScalar leftW;
         if (!root_->left) {
             leftW = kHalfWidthOfNodeView;
         } else {
-            leftW = root_->left->widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
+            leftW = root_->left->info.widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
         }
         return leftW;
     }
 
-    Scalar Width() const {
-        return root_->widthOfSubtree + kIndent * 2;
+    QScalar Width() const {
+        return root_->info.widthOfSubtree + kIndent * 2;
     }
 
-    Scalar Height() const {
-        return root_->heightOfSubtree + kIndent * 2;
+    QScalar Height() const {
+        return root_->info.heightOfSubtree + kIndent * 2;
     }
 
 private:
-    Scalar SetNode(GeomNodePtr& curNode, typename RBTreeKT::ConstIt it) {
+    QScalar SetNode(GeomNodePtr& curNode, typename RBTreeKT::ConstIt it) {
         auto node = std::make_unique<GeomNode>();
 
         if (!it) {
-            node->shape = NodeShape::Rect;
-            node->key = "NIL";
+            node->info.shape = NodeShape::Rect;
+            node->info.key = "NIL";
 
-            node->widthOfSubtree = node->halfWidth * 2;
-            node->heightOfSubtree = 0;
+            node->info.widthOfSubtree = node->info.halfWidth * 2;
+            node->info.heightOfSubtree = 0;
             curNode = std::move(node);
-            return curNode->widthOfSubtree;
+            return curNode->info.widthOfSubtree;
         }
 
-        node->key = std::to_string(it->key);
-        node->color = GetNodeColor(it);
-        node->halfWidth = kHalfWidthOfNodeView;
+        node->info.key = QString::number(it.getInfo().key);
+        node->info.color = GetNodeColor(it);
+        node->info.halfWidth = kHalfWidthOfNodeView;
 
-        Scalar leftWidth = SetNode(node->left, it.Left());
-        Scalar rightWidth = SetNode(node->right, it.Right());
+        QScalar leftWidth = SetNode(node->left, it.Left());
+        QScalar rightWidth = SetNode(node->right, it.Right());
 
         node->left->parent = node.get();
         node->right->parent = node.get();
 
-        node->widthOfSubtree = 2 * kHalfWidthOfNodeView + leftWidth + rightWidth;
-        node->widthOfSubtree += (leftWidth > 0 ? kMinDistBetweenNodes : 0);
-        node->widthOfSubtree += (rightWidth > 0 ? kMinDistBetweenNodes : 0);
+        node->info.widthOfSubtree = 2 * kHalfWidthOfNodeView + leftWidth + rightWidth;
+        node->info.widthOfSubtree += (leftWidth > 0 ? kMinDistBetweenNodes : 0);
+        node->info.widthOfSubtree += (rightWidth > 0 ? kMinDistBetweenNodes : 0);
 
-        Scalar leftHeight = node->left->heightOfSubtree;
-        Scalar rightHeight = node->right->heightOfSubtree;
-        node->heightOfSubtree = std::max(leftHeight, rightHeight) + kHeightOfLevel;
+        QScalar leftHeight = node->left->info.heightOfSubtree;
+        QScalar rightHeight = node->right->info.heightOfSubtree;
+        node->info.heightOfSubtree = std::max(leftHeight, rightHeight) + kHeightOfLevel;
 
         curNode = std::move(node);
 
-        return curNode->widthOfSubtree;
+        return curNode->info.widthOfSubtree;
     }
 
     void SetCoordinates(GeomNodePtr& curNode) {
@@ -176,23 +148,24 @@ private:
             return;
         }
         if (curNode.get() == root_.get()) {
-            curNode->centre = kStartRootCoordinates;
+            curNode->info.centre = kStartRootCoordinates;
             SetCoordinates(curNode->left);
             SetCoordinates(curNode->right);
             return;
         }
 
         GeomNode* parent = curNode->parent;
-        Scalar xShift;
+        QScalar xShift;
 
         if (!curNode->left) {
             xShift = kHalfWidthOfNodeView;
         } else {
-            xShift = curNode->left->widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
+            xShift =
+                curNode->left->info.widthOfSubtree + kMinDistBetweenNodes + kHalfWidthOfNodeView;
         }
 
         if (curNode.get() == parent->left.get()) {
-            xShift = curNode->widthOfSubtree - xShift;
+            xShift = curNode->info.widthOfSubtree - xShift;
         }
 
         xShift += kHalfWidthOfNodeView + kMinDistBetweenNodes;
@@ -201,20 +174,20 @@ private:
             xShift = -xShift;
         }
 
-        Scalar yShift = kHeightOfLevel;
+        QScalar yShift = kHeightOfLevel;
 
-        Point shift = {xShift, yShift};
-        curNode->centre = parent->centre + shift;
+        QPointF shift = {xShift, yShift};
+        curNode->info.centre = parent->info.centre + shift;
 
         SetCoordinates(curNode->left);
         SetCoordinates(curNode->right);
     }
 
-    void ShiftCoordinates(GeomNodePtr& curNode, Point shift) {
+    void ShiftCoordinates(GeomNodePtr& curNode, QPointF shift) {
         if (!curNode) {
             return;
         }
-        curNode->centre += shift;
+        curNode->info.centre += shift;
         ShiftCoordinates(curNode->left, shift);
         ShiftCoordinates(curNode->right, shift);
     }
@@ -225,18 +198,24 @@ private:
         }
         AlignCoordinates(curNode->left);
         AlignCoordinates(curNode->right);
-        curNode->centre.x = (curNode->left->centre.x + curNode->right->centre.x) / 2;
+        curNode->info.centre.setX(
+            (curNode->left->info.centre.x() + curNode->right->info.centre.x()) / 2);
     }
 
 private:
-    GeomNodePtr root_;
+    static constexpr const QScalar kHeightOfLevel = 70.;
+    static constexpr const QScalar kMinDistBetweenNodes = -20.;
+    static constexpr const QScalar kHalfWidthOfNodeView = 25.;
+    static constexpr const QPointF kStartRootCoordinates = {0, 0};
+    static constexpr const QScalar kIndent = 50.;
 
-public:
-    static constexpr const Scalar kHeightOfLevel = 60.;
-    static constexpr const Scalar kMinDistBetweenNodes = -20.;
-    static constexpr const Scalar kHalfWidthOfNodeView = 25.;
-    static constexpr const Point kStartRootCoordinates = {0, 0};
-    static constexpr const Scalar kIndent = 50.;
+    static constexpr const QColor kCustomBlack{0, 0, 0};
+    static constexpr const QColor kCustomLighterBlack{100, 100, 100};
+    static constexpr const QColor kCustomDarkRed{140, 0, 0};
+    static constexpr const QColor kCustomLighterDarkRed{230, 0, 0};
+    static constexpr const QColor kCustomGreen{0, 100, 0};
+
+    GeomNodePtr root_;
 };
 
 }  // namespace rbtree

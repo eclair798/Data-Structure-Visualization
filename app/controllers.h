@@ -11,6 +11,7 @@
 
 #include <QMessageBox>
 
+#include "animator.h"
 #include "exporter.h"
 
 namespace rbtree {
@@ -58,13 +59,19 @@ class ViewController : public QObject {
 public:
     ViewController(TreeView* view, QLineEdit* fileNameEdit, QObject* parent = nullptr);
 
-public slots:
-    void HandleScaleChange(int scale, float scaleOfScale);
-    void HandleViewSave();
-
 signals:
     void NewMessage(const QString& message);
     void NewError(const QString& message);
+
+public slots:
+    void HandleScaleChange(int scale);
+    void HandleViewSave();
+
+private:
+    QImage GetImage();
+
+public:
+    static constexpr const float kScaleRangeScale = 100;
 
 private:
     TreeView* view_;

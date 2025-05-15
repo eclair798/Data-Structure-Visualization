@@ -6,6 +6,8 @@ void React() {
         throw;
     } catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
-    } catch (...) {}
+    } catch (...) {
+        std::cerr << "Unknown error received" << std::endl;
+    }
 }
 }  // namespace except

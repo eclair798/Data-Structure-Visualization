@@ -17,14 +17,13 @@ namespace rbtree {
 
 class TreeExporter {
 public:
-    using String = std::string;
     using Path = std::filesystem::path;
 
-    static Path GetPathInDownloads(const String& fileName);
-    static bool SaveToPng(TreeView* view, String fileName);
+    static Path GetPathInDownloads(const Path& fileName);
+    static bool SaveAsPng(QImage* image, QString qFileName);
 
 private:
-    static const String kDefaultFileName;
+    static const Path kDefaultFileName;
 };
 
 }  // namespace rbtree

@@ -3,12 +3,13 @@
 namespace rbtree {
 
 // Итератор подойдет для любого бинарного дерева с полями:
-// left, right (unique ptrs) и parent (raw ptr)
+// left, right (unique ptrs), parent (raw ptr) и info
 
 template<typename Node>
 class Iterator {
 public:
     using NodePtr = std::unique_ptr<Node>;
+    using Info = Node::Info;
 
     Iterator(Node* startNode = nullptr) : current_(startNode) {
     }
@@ -16,25 +17,23 @@ public:
     Iterator(NodePtr& startNode = nullptr) : current_(startNode.get()) {
     }
 
-    Node* operator->() const {
-        return current_;
+    Info& getInfo() {
+        return current_->info;
     }
 
     operator bool() const {
-        if (current_) {
-            return true;
-        }
-        return false;
+        return current_;
     }
 
     Iterator& GoLeft() {
-        current_ = current_ ? current_->Left.get() : nullptr;
+        current_ = current_ ? current_->left.get() : nullptr;
         return *this;
     }
 
     Iterator Left() {
-        Node* next = current_ ? current_->left.get() : nullptr;
-        return Iterator(next);
+        Iterator it = *this;
+        it.GoLeft();
+        return it;
     }
 
     Iterator& GoRight() {
@@ -43,8 +42,9 @@ public:
     }
 
     Iterator Right() {
-        Node* next = current_ ? current_->right.get() : nullptr;
-        return Iterator(next);
+        Iterator it = *this;
+        it.GoRight();
+        return it;
     }
 
     Iterator& GoToParent() {
@@ -53,8 +53,9 @@ public:
     }
 
     Iterator Parent() {
-        Node* next = current_ ? current_->parent : nullptr;
-        return Iterator(next);
+        Iterator it = *this;
+        it.GoToParent();
+        return it;
     }
 
     bool operator==(const Iterator& other) const {
@@ -62,7 +63,7 @@ public:
     }
 
     bool operator!=(const Iterator& other) const {
-        return current_ != other.current_;
+        return !(*this == other);
     }
 
 private:
@@ -73,6 +74,7 @@ template<typename Node>
 class ConstIterator {
 public:
     using NodePtr = std::unique_ptr<Node>;
+    using Info = Node::Info;
 
     ConstIterator(Node* startNode = nullptr) : current_(startNode) {
     }
@@ -80,15 +82,12 @@ public:
     ConstIterator(const NodePtr& startNode = nullptr) : current_(startNode.get()) {
     }
 
-    const Node* operator->() const {
-        return current_;
+    const Info& getInfo() {
+        return current_->info;
     }
 
     operator bool() const {
-        if (current_) {
-            return true;
-        }
-        return false;
+        return current_;
     }
 
     ConstIterator& GoLeft() {
@@ -97,13 +96,15 @@ public:
     }
 
     ConstIterator Left() {
-        Node* next = current_ ? current_->left.get() : nullptr;
-        return ConstIterator(next);
+        ConstIterator it = *this;
+        it.GoLeft();
+        return it;
     }
 
     ConstIterator& GoRight() {
-        current_ = current_ ? current_->right.get() : nullptr;
-        return *this;
+        ConstIterator it = *this;
+        it.GoRight();
+        return it;
     }
 
     ConstIterator Right() {
@@ -117,8 +118,9 @@ public:
     }
 
     ConstIterator Parent() {
-        Node* next = current_ ? current_->parent : nullptr;
-        return ConstIterator(next);
+        ConstIterator it = *this;
+        it.GoToParent();
+        return it;
     }
 
     bool operator==(const ConstIterator& other) const {
@@ -126,7 +128,7 @@ public:
     }
 
     bool operator!=(const ConstIterator& other) const {
-        return current_ != other.current_;
+        return !(*this == other);
     }
 
 private:

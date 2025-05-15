@@ -104,20 +104,36 @@ ViewController::ViewController(TreeView* view, QLineEdit* fileNameEdit, QObject*
     : view_(view), fileNameEdit_(fileNameEdit), QObject(parent) {
 }
 
-void ViewController::HandleScaleChange(int scale, float scaleOfScale) {
-    view_->HandleScaleChange(scale, scaleOfScale);
+void ViewController::HandleScaleChange(int scale) {
+    view_->HandleScaleChange(scale, kScaleRangeScale);
 }
 
 void ViewController::HandleViewSave() {
-    auto fileName = fileNameEdit_->text().toStdString();
-    bool ok = TreeExporter::SaveToPng(view_, fileName);
+    auto fileName = fileNameEdit_->text();
+
+    QImage image = GetImage();
+
+    bool ok = TreeExporter::SaveAsPng(&image, fileName);
     if (ok) {
-        std::string msg = "Picture successfully saved to Downloads folder.";
-        emit NewMessage(QString::fromStdString(msg));
+        emit NewMessage("Picture successfully saved to Downloads folder.");
     } else {
-        std::string msg = "An error occurred. Picture was not saved.";
-        emit NewError(QString::fromStdString(msg));
+        emit NewError("An error occurred. Picture was not saved.");
     }
+}
+
+QImage ViewController::GetImage() {
+    QSize realTreeSize = view_->TreeSize();
+    QImage image(realTreeSize, QImage::Format_ARGB32);
+    image.fill(Qt::white);
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    view_->render(&painter);
+
+    return image;
 }
 
 }  // namespace rbtree
