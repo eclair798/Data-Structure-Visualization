@@ -1,0 +1,680 @@
+#pragma once
+
+#include <memory>
+#include <iostream>
+#include <cassert>
+#include <cstdint>
+
+#include "tree_iterator.h"
+#include "observer.h"
+
+namespace rbtree {
+
+/* Красно-Черное дерево. Его свойства:
+* 1) Каждый узел красный или черный
+* 2) Корень и конечные узлы (листья) дерева — чёрные (в структуре листья NIL будут храниться как nullptr)
+* 3) У красного узла родительский узел — чёрный
+* 4) Все простые пути из любого узла x до листьев содержат одинаковое количество чёрных узлов
+* 5) Чёрный узел может иметь чёрного родителя
+*/
+
+template<typename KeyType = int>
+class RBTree {
+public:
+    enum class NodeColor : std::uint8_t { Black, Red };
+    enum class NodeStatus : std::uint8_t { NoChange, Found, Intermediate };
+
+private:
+    struct Node {
+        using NodePtr = std::unique_ptr<Node>;
+
+        Node() = default;
+
+        Node(int key) {
+            info.key = key;
+        }
+
+        struct Info {
+            KeyType key;
+            NodeColor color = NodeColor::Black;
+            NodeStatus status = NodeStatus::NoChange;
+        };
+
+        Info info;
+
+        // KeyType key;
+        // NodeColor color = NodeColor::Black;
+
+        NodePtr left = nullptr;
+        NodePtr right = nullptr;
+        Node* parent = nullptr;
+    };
+
+    using NodePtr = typename Node::NodePtr;
+
+public:
+    using It = Iterator<Node>;
+    using ConstIt = ConstIterator<Node>;
+
+    using TreeObservable = NSLibrary::CObservable<const RBTree&, NSLibrary::CByReference>;
+    using TreeObserver = NSLibrary::CHotInput<const RBTree&, NSLibrary::CByReference>;
+
+    It GetRoot() {
+        return It{root_};
+    }
+
+    ConstIt GetRoot() const {
+        return ConstIt{root_};
+    }
+
+public:
+    // Вставка нового ключа
+    bool Insert(const KeyType& key) {
+        StatusResetWithNotify();
+
+        if (Search(key)) {
+            return false;  // Ключ уже в дереве
+        }
+
+        NodePtr newNode = std::make_unique<Node>(key);
+
+        // Дерево пустое
+        if (!root_) {
+            newNode->info.color = NodeColor::Black;
+            root_ = std::move(newNode);
+
+            StatusResetWithNotify();
+            return true;
+        }
+        newNode->info.color = NodeColor::Red;
+
+        // ищем нужное место и родителя этого места
+        Node* current = root_.get();
+        Node* parent = nullptr;
+
+        while (current != nullptr) {
+            parent = current;
+            if (key < current->info.key) {
+                current = current->left.get();
+            } else {
+                current = current->right.get();
+            }
+        }
+
+        // insert
+        newNode->parent = parent;
+        Node* rawNew = newNode.get();
+
+        if (key < parent->info.key) {
+            parent->left = std::move(newNode);
+        } else {
+            parent->right = std::move(newNode);
+        }
+
+        rawNew->info.status = NodeStatus::Found;
+        NotifyStep();
+
+        // fixup
+        InsertFixup(rawNew);
+
+        StatusResetWithNotify();
+        return true;
+    }
+
+    /* 
+    * Удаление узла по ключу.
+    * 1) Сначала ищем узел p с нужным ключом.
+    * 2) В зависимости от числа детей действуем как в обычном BST:
+    *    - Нет детей: удаляем узел напрямую.
+    *    - Один ребёнок: "поднимаем" ребёнка на место p.
+    *    - Два ребёнка: ищем "следующего по ключу" (minimum в правом поддереве),
+    *      копируем его ключ в p, а дальше удаляем найденный узел как в случае "нет или один ребёнок".
+    * 3) Если удалённая (или перемещённая) вершина была чёрной, делаем fixup.
+    */
+    bool Delete(const KeyType& key) {
+        StatusResetWithNotify();
+
+        Node* z = SearchNode(key);
+        if (!z) {
+            return false;
+        }
+
+        // y - удаляемый узел
+        Node* y = z;
+        NodeColor yOriginalColor = y->info.color;
+        Node* yOriginalParent = y->parent;
+        KeyType yOriginalKey;
+
+        // x - единственный сын y который поднимем на его место
+        Node* x = nullptr;
+        NodePtr tmpHolder;
+
+        if (!z->left) {
+            // нет левого ребёнка
+            x = z->right.get();
+            // "поднимаем" z->right на место z
+            NodePtr& zRef = ParentRef(z);
+            tmpHolder = std::move(zRef);
+            NodePtr rightSubtree = std::move(z->right);
+            if (rightSubtree) {
+                rightSubtree->parent = z->parent;
+            }
+            zRef = std::move(rightSubtree);
+        } else if (!z->right) {
+            // нет правого ребёнка
+            x = z->left.get();
+            NodePtr& zRef = ParentRef(z);
+            tmpHolder = std::move(zRef);
+            NodePtr leftSubtree = std::move(z->left);
+            if (leftSubtree) {
+                leftSubtree->parent = z->parent;
+            }
+            zRef = std::move(leftSubtree);
+        } else {
+            // у z два ребёнка.
+            y = Minimum(z->right.get());
+            yOriginalColor = y->info.color;
+            yOriginalParent = y->parent;
+            yOriginalKey = y->info.key;
+
+            // поднимаем y на место z
+            z->info.key = yOriginalKey;
+            NotifyStep();
+
+            x = y->right.get();
+
+            // поднимаем x на место y
+            NodePtr& yRef = ParentRef(y);
+            tmpHolder = std::move(yRef);
+            NodePtr yRight = std::move(y->right);
+            if (yRight) {
+                yRight->parent = y->parent;
+            }
+            yRef = std::move(yRight);
+
+            tmpHolder.reset();
+        }
+
+        NotifyStep();
+
+        if (yOriginalColor == NodeColor::Red) {
+            StatusResetWithNotify();
+            return true;
+        }
+        if (x) {
+            assert(x->info.color == NodeColor::Red &&
+                   "Error in Delete: The only child is black. The black height on the right and on "
+                   "the "
+                   "left is different");
+            x->info.color = NodeColor::Black;
+
+            NotifyStep();
+
+            StatusResetWithNotify();
+            return true;
+        }
+
+        // fixup
+        if (root_) {
+            DeleteFixup(yOriginalParent);  // x это nullptr то есть nil
+        }
+
+        StatusResetWithNotify();
+        return true;
+    }
+
+    bool Search(const KeyType& key) {
+        return (SearchNode(key) != nullptr);
+    }
+
+    void Reset() {
+        root_.reset();
+        NotifyStep();
+    }
+
+    void StatusReset(Node* now = nullptr) {
+        if (root_ == nullptr) {
+            return;
+        }
+        if (now == nullptr) {
+            now = root_.get();
+        }
+        now->info.status = NodeStatus::NoChange;
+        if (now->left) {
+            StatusReset(now->left.get());
+        }
+        if (now->right) {
+            StatusReset(now->right.get());
+        }
+    }
+
+    // У пользователя имеется возможность сбросить статусы сохранившиеся после выполнения каких либо функций.
+    // Например путь поиска после Search итд.
+    void StatusResetWithNotify() {
+        StatusReset();
+        NotifyStep();
+    }
+
+    template<typename KT>
+    friend std::ostream& operator<<(std::ostream& os, const RBTree<KT>& tree) {
+        if (!tree.root_) {
+            os << "<empty tree>";
+            return os;
+        }
+
+        std::function<void(const typename RBTree<KeyType>::NodePtr&, std::string, std::string)>
+            printSubtree;
+
+        printSubtree = [&](const typename RBTree<KeyType>::NodePtr& node, std::string indent,
+                           std::string branch) {
+            if (node) {
+                os << indent << branch << node->info.key << "["
+                   << (node->info.color == RBTree<KeyType>::NodeColor::Red ? "R" : "B") << "]"
+                   << "\n";
+                printSubtree(node->left, indent + "    ", "L-- ");
+                printSubtree(node->right, indent + "    ", "R-- ");
+            }
+        };
+
+        printSubtree(tree.root_, "", "");
+        return os;
+    }
+
+private:
+    /*
+    *       x               y
+    *      / \             / \
+    *     A   y    -->    x   C
+    *        / \         / \
+    *       B   C       A   B
+    */
+    void RotateLeft(Node* x) {
+        StatusResetWithNotify();
+
+        if (!x || !x->right) {
+            return;
+        }
+        Node* y = x->right.get();
+
+        x->info.status = NodeStatus::Intermediate;
+        y->info.status = NodeStatus::Intermediate;
+        if (x->left) {
+            x->left->info.status = NodeStatus::Intermediate;
+        }
+        if (y->left) {
+            y->left->info.status = NodeStatus::Intermediate;
+        }
+        if (y->right) {
+            y->right->info.status = NodeStatus::Intermediate;
+        }
+        NotifyStep();
+
+        NodePtr oldY = std::move(x->right);  // "упаковали" y во временный unique_ptr
+        y->parent = nullptr;
+
+        x->right = std::move(y->left);  // в этот момент y отвязался от unique_ptr
+        if (x->right) {
+            x->right->parent = x;
+        }
+
+        NodePtr& refToX = ParentRef(x);  // получаем ссылку на x
+        refToX.release();                // отвязываем x от unique_ptr
+
+        NodePtr oldX;
+        oldX.reset(x);  // "упаковали" x во временный unique_ptr
+
+        // Восстанавливаем связь y->parent = x->parent
+        y->parent = x->parent;
+
+        // В refToX (тот, что раньше указывал на x) запишем y
+        refToX = std::move(oldY);  // теперь refToX владеет y
+
+        // y->left становится x
+        y->left = std::move(oldX);
+        y->left->parent = y;
+
+        NotifyStep();
+        StatusResetWithNotify();
+    }
+
+    /*
+    *         x           y
+    *        / \         / \
+    *       y   A  -->  B   x   
+    *      / \             / \
+    *     B   C           C   A
+    */
+    void RotateRight(Node* x) {
+        StatusResetWithNotify();
+
+        if (!x || !x->left) {
+            return;
+        }
+        Node* y = x->left.get();
+
+        x->info.status = NodeStatus::Intermediate;
+        y->info.status = NodeStatus::Intermediate;
+        if (x->right) {
+            x->right->info.status = NodeStatus::Intermediate;
+        }
+        if (y->left) {
+            y->left->info.status = NodeStatus::Intermediate;
+        }
+        if (y->right) {
+            y->right->info.status = NodeStatus::Intermediate;
+        }
+        NotifyStep();
+
+        NodePtr oldY = std::move(x->left);
+        y->parent = nullptr;
+
+        // Перенос "правого поддерева y" на "левое поддерево x"
+        x->left = std::move(y->right);
+        if (x->left) {
+            x->left->parent = x;
+        }
+
+        NodePtr& refToX = ParentRef(x);
+        refToX.release();
+
+        NodePtr oldX;
+        oldX.reset(x);
+
+        y->parent = x->parent;
+        refToX = std::move(oldY);
+
+        y->right = std::move(oldX);
+        y->right->parent = y;
+
+        NotifyStep();
+        StatusResetWithNotify();
+    }
+
+    /*
+    * Восстановление КЧ-свойств после вставки узла x.
+    * Пока у x есть "красный родитель", проверяем "дядю".
+    * Если дядя красный - просто перекрашиваем, иначе делаем повороты.
+    */
+    void InsertFixup(Node* x) {
+        StatusResetWithNotify();
+
+        // Пока есть родитель и он красный - нарушение свойства 3
+        while (x != root_.get() && x->parent->info.color == NodeColor::Red) {
+            Node* parent = x->parent;
+            Node* grandparent =
+                parent->parent;  // если есть красный отец то и дед должен быть, причем черный
+            assert(grandparent && "Error in InsertFixup: red node has not parent");
+            assert(grandparent->info.color == NodeColor::Black &&
+                   "Error in InsertFixup: red node has red parent");
+
+            if (parent == grandparent->left.get()) {
+                // "Дядя" - правый сын деда
+                Node* uncle = grandparent->right.get();
+
+                // 1) Дядя красный
+                if (uncle && uncle->info.color == NodeColor::Red) {
+                    // Перекрашиваем
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    uncle->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    grandparent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    x = grandparent;
+                } else {
+                    // 2) Дядя чёрный
+                    if (x == parent->right.get()) {
+                        x = parent;
+                        RotateLeft(x);
+                        parent = x->parent;
+                        grandparent = parent->parent;
+                    }
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    grandparent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    RotateRight(grandparent);
+                }
+            } else {
+                // "Дядя" - левый сын деда
+                Node* uncle = grandparent->left.get();
+
+                // 1) Дядя красный
+                if (uncle && uncle->info.color == NodeColor::Red) {
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    uncle->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    grandparent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    x = grandparent;
+                } else {
+                    // 2) Дядя чёрный
+                    if (x == parent->left.get()) {
+                        x = parent;
+                        RotateRight(x);
+                        parent = x->parent;
+                        grandparent = parent->parent;
+                    }
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    grandparent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    RotateLeft(grandparent);
+                }
+            }
+        }
+        root_->info.color = NodeColor::Black;
+        NotifyStep();
+    }
+
+    /*
+    * Восстановление КЧ-свойств после удаления.
+    * x - это NIL узел который имеет двойную черность.
+    * Идём вверх до корня, пока не снимем двойную чёрность.
+    */
+    void DeleteFixup(Node* parent) {
+        StatusResetWithNotify();
+
+        Node* x = nullptr;
+        while (x != root_.get() && (!x || x->info.color == NodeColor::Black)) {
+            parent = x ? x->parent : parent;
+
+            if (x == parent->left.get()) {
+                // x - левый ребёнок
+                Node* w = parent->right.get();
+                assert(w && "Error in DeleteFixup: x has not brother");
+
+                // 1. Если брат красный
+                if (w->info.color == NodeColor::Red) {
+                    w->info.color = NodeColor::Black;
+                    parent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    RotateLeft(parent);
+                    w = parent->right.get();
+                    assert(w && "Error in DeleteFixup: x has not brother");
+                }
+
+                // 2. Если дети брата чёрные
+                if ((!w->left || w->left->info.color == NodeColor::Black) &&
+                    (!w->right || w->right->info.color == NodeColor::Black)) {
+                    w->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    x = parent;
+                    continue;
+                } else {
+                    // 3. Если левый ребёнок брата красный, а правый чёрный
+                    if (!w->right || w->right->info.color == NodeColor::Black) {
+                        if (w->left) {
+                            w->left->info.color = NodeColor::Black;
+                            NotifyStep();
+                        }
+                        w->info.color = NodeColor::Red;
+                        NotifyStep();
+                        RotateRight(w);
+                        w = parent->right.get();
+                        if (!w) {
+                            x = parent;
+                            continue;
+                        }
+                    }
+                    // 4. Правый ребёнок брата красный
+                    w->info.color = parent->info.color;
+                    NotifyStep();
+
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    if (w->right) {
+                        w->right->info.color = NodeColor::Black;
+                        NotifyStep();
+                    }
+                    RotateLeft(parent);
+                    x = root_.get();
+                }
+            } else {
+                // x - правый ребёнок
+                Node* w = parent->left.get();
+                assert(w && "Error in DeleteFixup: x has not brother");
+
+                // 1. Брат красный
+                if (w->info.color == NodeColor::Red) {
+                    w->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    parent->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    RotateRight(parent);
+                    w = parent->left.get();
+                    assert(w && "Error in DeleteFixup: x has not brother");
+                }
+
+                // 2. Оба ребёнка брата чёрные
+                if ((!w->left || w->left->info.color == NodeColor::Black) &&
+                    (!w->right || w->right->info.color == NodeColor::Black)) {
+                    w->info.color = NodeColor::Red;
+                    NotifyStep();
+
+                    x = parent;
+                    continue;
+                } else {
+                    // 3. Правый ребёнок брата красный, а левый чёрный
+                    if (!w->left || w->left->info.color == NodeColor::Black) {
+                        if (w->right) {
+                            w->right->info.color = NodeColor::Black;
+                            NotifyStep();
+                        }
+                        w->info.color = NodeColor::Red;
+                        NotifyStep();
+
+                        RotateLeft(w);
+                        w = parent->left.get();
+                        if (!w) {
+                            x = parent;
+                            continue;
+                        }
+                    }
+                    // 4. Левый ребёнок брата красный
+                    w->info.color = parent->info.color;
+                    NotifyStep();
+
+                    parent->info.color = NodeColor::Black;
+                    NotifyStep();
+
+                    if (w->left) {
+                        w->left->info.color = NodeColor::Black;
+                        NotifyStep();
+                    }
+                    RotateRight(parent);
+                    x = root_.get();
+                }
+            }
+        }
+        x->info.color = NodeColor::Black;
+        NotifyStep();
+    }
+
+    // Просто ищет ноду с ключом. Если такого нет, то просто nullptr
+    Node* SearchNode(const KeyType& key) {
+        StatusResetWithNotify();
+
+        Node* current = root_.get();
+        while (current != nullptr) {
+            current->info.status = NodeStatus::Intermediate;
+            if (key < current->info.key) {
+                current = current->left.get();
+            } else if (key > current->info.key) {
+                current = current->right.get();
+            } else {
+                current->info.status = NodeStatus::Found;
+                NotifyStep();
+                return current;
+            }
+            NotifyStep();
+        }
+        return nullptr;
+    }
+
+    // Минимальный ключ в поддереве
+    Node* Minimum(Node* subtreeRoot) {
+        NotifyStep();
+
+        Node* current = subtreeRoot;
+        while (current->left) {
+            current->info.status = NodeStatus::Intermediate;
+            current = current->left.get();
+            NotifyStep();
+        }
+        current->info.status = NodeStatus::Found;
+        NotifyStep();
+        return current;
+    }
+
+    // Возвращает NodePtr& указываюзий на Node*
+    NodePtr& ParentRef(Node* child) {
+        if (child == root_.get()) {
+            return root_;
+        }
+        Node* p = child->parent;
+        assert(p && "Error in ParentRef: child->parent is null");
+
+        if (p->left.get() == child) {
+            return p->left;
+        } else if (p->right.get() == child) {
+            return p->right;
+        }
+        assert(false && "Error in ParentRef: child->parent has not this child");
+    }
+
+public:
+    void SubscribeTree(TreeObserver* observerPtr) {
+        treeObservable_.subscribe(observerPtr);
+    }
+
+private:
+    void NotifyStep() {
+        treeObservable_.notify();
+    }
+
+private:
+    NodePtr root_ = nullptr;
+
+    TreeObservable treeObservable_{[this]() -> const RBTree& {
+        return *this;
+    }};
+};
+
+}  // namespace rbtree
